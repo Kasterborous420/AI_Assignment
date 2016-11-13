@@ -202,18 +202,39 @@ int state;            // Current state value
 const int PATROL = 0; // Possible state definition
 const int CHASE = 1;
 
+// Vector of Table positions
+vector<MyVector> tables;
+
 enum CHEF_STATE
 {
-	E_COOK,
-	E_SERVE,
-	E_WAIT,
-	E_MAX
+	E_CHEF_COOK,
+	E_CHEF_SERVE,
+	E_CHEF_WAIT,
+	E_CHEF_MAX
 };
 CHEF_STATE chefState;
 const float chefSpeed = 0.01f;
 const float cookTime = 5.0f;
 MyVector chefPos;
+MyVector chefStation;
 vector<MyVector> chefWaypoints;
+
+bool isDone; 
+
+
+enum WAITER_STATE
+{
+	E_WAITER_SERVE,
+	E_WAITER_IDLE,
+	E_WAITER_PICKUP,
+	E_WAITER_MAX
+};
+WAITER_STATE waiterState;
+const float waiterSpeed = 0.02f;
+MyVector waiterPos;
+bool foodReady;
+
+
 
 
 const float playerSpeed = 0.0175f;
@@ -235,9 +256,10 @@ static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, 
 
 void SimulationInit()
 {
+	chefStation = MyVector(0.f, -3.f);
 	srand( ( unsigned ) time( NULL ) );
 	float offset = 2.0;
-	wayPoints.push_back( MyVector( -offset, -offset ) );
+	wayPoints.push_back( MyVector( -offset, -offset ));
 	wayPoints.push_back( MyVector( -offset,  offset));
 	wayPoints.push_back( MyVector(  offset,  offset));
 	wayPoints.push_back( MyVector(  offset, -offset));
@@ -245,14 +267,27 @@ void SimulationInit()
 	intrusionPoints.push_back( MyVector( -1.2f*offset,  0.3f*offset ) );
 	intrusionPoints.push_back( MyVector(  1.2f*offset,  0.3f*offset ) );
 	intrusionPoints.push_back( MyVector(  1.2f*offset, -0.3f*offset ) );
-	playerPos.SetPosition (wayPoints[ 0 ].GetX(), wayPoints[ 0 ].GetY() );
+	waiterPos.SetPosition (wayPoints[ 0 ].GetX(), wayPoints[ 0 ].GetY() );
 	int randomIndex = RandomInteger(1, 3);
 	enemyPos.SetPosition( intrusionPoints[ randomIndex ].GetX(), intrusionPoints[ randomIndex ].GetY() );
+	
+	// Set AI States
+	waiterState = E_WAITER_IDLE;
 	state = PATROL;
+
+	//Set AI Conditions
+	foodReady = false;
 	waypointIndex = 1;
 	arrived = false;
 }
 
+void PrepareFood()
+{
+	//==========PSEUDO CODE============//
+	//if order comes in, cook the food
+	//when food is done change boolean foodReady to true;
+	foodReady = true;
+}
 int main()
 {
 	// INIT ///////////////////////////////////////////////////////////////
@@ -350,14 +385,17 @@ void RenderObjects()
 	glPushMatrix();
 	glTranslatef( 0.0f, 0.0f, -10.0f );
 	
-	// Player
-	RenderFillCircle( playerPos.GetX(), playerPos.GetY(), playerRadius, 0.0f, 0.0f, 1.0f ); // player object
-	RenderCircle( playerPos.GetX(), playerPos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f ); // player proximity
+	// Waiter
+	RenderFillCircle(waiterPos.GetX(), waiterPos.GetY(), playerRadius, 0.0f, 0.0f, 1.0f); // player object
+	RenderCircle(waiterPos.GetX(), waiterPos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // player proximity
 	// Enemy
 	RenderFillCircle( enemyPos.GetX(), enemyPos.GetY(), enemyRadius, 0.0f, 1.0f, 0.0f ); // enemy object
 	// Waypoints
 	for (unsigned int i = 0; i < wayPoints.size(); i++ )
 		RenderCircle(wayPoints[i].GetX(), wayPoints[i].GetY(), playerRadius + 0.1f, 1.0f, 0.0f, 0.0f); //  waypoints
+
+	//Food Station
+	RenderCircle(chefStation.GetX(), chefStation.GetY(), playerRadius + 0.1f, 1.0f, 0.0f, 0.0f);
 		
 	glPopMatrix();
 }
@@ -374,6 +412,11 @@ void RunFSM()
 		case CHASE :	if ( !enemyDetected ) 
 							state = PATROL;
 						break;
+	}
+
+	if (foodReady)
+	{
+		waiterState = E_WAITER_PICKUP;
 	}
 }
 
@@ -401,6 +444,31 @@ void Update()
 			arrived = false;
 		}
 	}
+
+	if (waiterState == E_WAITER_PICKUP)
+	{
+		MyVector direction = (playerPos - chefStation).Normalize();
+		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), chefStation.GetX(), chefStation.GetY());
+		if (distance < waiterSpeed)
+		{
+			arrived = true;
+		}
+		else
+		{
+			waiterPos = waiterPos + direction * waiterSpeed;
+		}
+
+		if (arrived)
+		{
+			waiterState = E_WAITER_SERVE;
+			arrived = false;
+		}
+	}
+	if (waiterState == E_WAITER_SERVE)
+	{
+		//Find a table to serve
+	}
+
 }
 
 void Render( GLFWwindow* window )
