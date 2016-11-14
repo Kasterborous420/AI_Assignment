@@ -568,6 +568,7 @@ void Update()
 		{
 			waiterState = E_WAITER_MOVE;
 			customerPickup = false;
+			availableCustomers = false;
 		}
 	}
 
