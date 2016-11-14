@@ -248,7 +248,7 @@ enum CUS_STATE
 	E_CUSTOMER_MAX
 };
 CUS_STATE customerState;
-const float customerSpeed = 0.01f;
+const float customerSpeed = 0.015f;
 float eatSpeed = 0.1f;
 bool customerSeated;
 MyVector customerPos;
@@ -479,6 +479,11 @@ void RunFSM()
 	{
 		waiterState = E_WAITER_PICKUPCUSTOMER;
 	}
+
+	/*if (customerPickup)
+	{
+		customerState = E_CUSTOMER_MOVE;
+	}*/
 }
 
 void Update()
@@ -567,6 +572,7 @@ void Update()
 		if (customerPickup)
 		{
 			waiterState = E_WAITER_MOVE;
+			customerState = E_CUSTOMER_MOVE;
 			customerPickup = false;
 			availableCustomers = false;
 		}
@@ -574,8 +580,8 @@ void Update()
 
 	if (waiterState == E_WAITER_MOVE)
 	{
-		MyVector direction = (waiterPos - wayPoints[0]).Normalize();
-		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), wayPoints[0].GetX(), wayPoints[0].GetY());
+		MyVector direction = (waiterPos - wayPoints[1]).Normalize();
+		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), wayPoints[1].GetX(), wayPoints[1].GetY());
 
 		if (distance < waiterSpeed)
 		{
@@ -597,14 +603,25 @@ void Update()
 
 #pragma region Customer Updates
 
-	if (customerPickup)
-	{
-		customerState = E_CUSTOMER_MOVE;
-	}
-
 	if (customerState == E_CUSTOMER_MOVE)
 	{
+		MyVector direction = (customerPos - wayPoints[1]).Normalize();
+		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), wayPoints[1].GetX(), wayPoints[1].GetY());
 
+		if (distance < customerSpeed)
+		{
+			customerSeated = true;
+		}
+		else
+		{
+			customerPos = customerPos + direction * customerSpeed;
+		}
+
+		if (customerSeated)
+		{
+			customerState = E_CUSTOMER_IDLE;
+			customerSeated = false;
+		}
 	}
 
 #pragma endregion
