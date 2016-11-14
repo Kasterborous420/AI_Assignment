@@ -475,7 +475,7 @@ void Update()
 	if (waiterState == E_WAITER_SERVE)
 	{
 		//Find a table to serve
-		MyVector direction = (waiterPos - wayPoints[1].Normalize());
+		MyVector direction = (waiterPos - wayPoints[1]).Normalize();
 		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), wayPoints[0].GetX(), wayPoints[0].GetY());
 		if (distance < waiterSpeed)
 		{
@@ -490,7 +490,6 @@ void Update()
 		{
 			waiterState = E_WAITER_IDLE;
 			arrived = false;
-
 		}
 	}
 
