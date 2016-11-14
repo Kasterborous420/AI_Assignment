@@ -217,6 +217,7 @@ const int CHASE = 1;
 // Vector of Table positions
 vector<MyVector> tables;
 
+// Chef related
 enum CHEF_STATE
 {
 	E_CHEF_COOK,
@@ -233,7 +234,7 @@ vector<MyVector> chefWaypoints;
 
 bool isDone; 
 
-
+// Waiter related
 enum WAITER_STATE
 {
 	E_WAITER_SERVE,
@@ -246,7 +247,31 @@ const float waiterSpeed = 0.02f;
 MyVector waiterPos;
 bool foodReady;
 
+// Customer related
+enum CUS_STATE
+{
+	E_CUSTOMER_IDLE,
+	E_CUSTOMER_MOVE,
+	E_CUSTOMER_ORDER,
+	E_CUSTOMER_EAT,
+	E_CUSTOMER_LEAVE,
+	E_CUSTOMER_MAX
+};
+CUS_STATE customerState;
+const float customerSpeed = 0.01f;
+MyVector customerPos;
 
+// Caller related
+enum CALLER_STATE
+{
+	E_CALLER_IDLE,
+	E_CALLER_CHECK,
+	E_CALLER_WAIT,
+	E_CALLER_CALL,
+	E_CALLER_MAX
+};
+CALLER_STATE callerState;
+MyVector callerPos;
 
 
 const float playerSpeed = 0.0175f;
