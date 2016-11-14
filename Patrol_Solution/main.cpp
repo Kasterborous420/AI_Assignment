@@ -16,6 +16,8 @@ using namespace std;
 
 #pragma comment(linker,"/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
 
+#pragma region DO NOT TOUCH
+
 void Render( GLFWwindow* window );
 
 int RandomInteger( int lowerLimit, int upperLimit )
@@ -88,6 +90,8 @@ void RenderFillCircle( GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat 
 	glEnd();
 }
 
+#pragma region SHADER RELATED
+
 // SHADERS //////////////////////////////////////////////////////////////////
 const char *VERTEX_SHADER = ""
 "#version 410 core\n"
@@ -116,6 +120,10 @@ GLuint vs{ 0 }, fs{ 0 }, program{ 0 };
 
 ///////////////////////////////////////////////////////////////////
 
+#pragma endregion
+
+#pragma region CALLBACKS
+
 static void ErrorCallBack ( int error, const char*description )
 {
 	fputs( description, stderr );
@@ -133,6 +141,8 @@ static void ResizeCallBack(GLFWwindow *window, int w, int h)
 	gluPerspective( 60, (float) w / (float) h, 0, 100 );
 	glMatrixMode( GL_MODELVIEW );
 }
+
+#pragma endregion
 
 // Free Type //////////////////////////////////////////////////////
 FT_Library ft_lib{ nullptr };
@@ -197,6 +207,8 @@ void DoExit()
 	glfwTerminate();
 	exit(EXIT_SUCCESS);
 }
+
+#pragma endregion
 
 int state;            // Current state value
 const int PATROL = 0; // Possible state definition
