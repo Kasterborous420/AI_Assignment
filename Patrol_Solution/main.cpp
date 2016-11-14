@@ -12,6 +12,7 @@
 #include <GLFw/glfw3.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
+#include "MyVector.h"
 using namespace std;
 
 #pragma comment(linker,"/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
@@ -32,25 +33,7 @@ string itos( const long value )
 	buffer << value; 
 	return buffer.str();
 }
-
-struct MyVector
-{
-	float x, y;
-	MyVector() :x(0), y(0){}
-	MyVector(float x, float y) :x(x), y(y){}
-	void SetPosition(float _x, float _y){ x = _x; y = _y; }
-	float GetX(){ return x; }
-	float GetY(){ return y; }
-	float Magnitude(){ return sqrt(x*x + y*y); }
-	MyVector Normalize(){ float length = Magnitude(); return MyVector(x / length, y / length); }
-	MyVector operator + (MyVector u){ return MyVector(x + u.x, y + u.y); }
-	MyVector operator - (MyVector u){ return MyVector(u.x - x, u.y - y); }
-	MyVector operator += (MyVector u){ return MyVector(x + u.x, y + u.y); }
-	MyVector operator ~(){ return MyVector(-x, -y); }
-	MyVector operator *(float scale){ return MyVector(x*scale, y*scale); }
-	float operator * (MyVector  v){ return  x*v.x + y*v.y; }
-};
-
+  
 float GetDistance(float x1, float y1, float x2, float y2) { return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); } // OK
 
 // Within range
@@ -217,6 +200,8 @@ const int CHASE = 1;
 // Vector of Table positions
 vector<MyVector> tables;
 
+#pragma region AI_STATES
+
 enum CHEF_STATE
 {
 	E_CHEF_COOK,
@@ -247,7 +232,7 @@ MyVector waiterPos;
 bool foodReady;
 
 
-
+#pragma endregion
 
 const float playerSpeed = 0.0175f;
 const float enemySpeed = 0.0200f;
