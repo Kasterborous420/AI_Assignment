@@ -553,5 +553,3 @@ void Render( GLFWwindow* window )
 		glfwPollEvents();
 	}
 }
-
-// Wayne is cuck
