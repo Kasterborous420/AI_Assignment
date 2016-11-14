@@ -11,10 +11,10 @@ public:
 	void SetPos(MyVector _pos);
 	MyVector GetPos();
 
-	void GetStatus();
-	void SetStatus();
+	bool GetStatus();
+	void SetStatus(bool isEat);
 
-	void SetSize();
+	void SetSize(unsigned int size);
 	int GetSize();                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
 	CDiningTable();
 	~CDiningTable();
