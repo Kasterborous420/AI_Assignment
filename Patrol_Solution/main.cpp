@@ -252,6 +252,10 @@ static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, 
 {
 	if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
 		glfwSetWindowShouldClose( window, GL_TRUE );
+	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
+	{
+		foodReady = true;
+	}
 }
 
 void SimulationInit()
@@ -288,6 +292,7 @@ void PrepareFood()
 	//when food is done change boolean foodReady to true;
 	foodReady = true;
 }
+
 int main()
 {
 	// INIT ///////////////////////////////////////////////////////////////
@@ -422,32 +427,34 @@ void RunFSM()
 
 void Update()
 {
-	if ( state != CHASE )
-	{
-		nextPoint = wayPoints[waypointIndex];
-		MyVector direction = ( playerPos - nextPoint ).Normalize();
-		float distance = GetDistance(playerPos.GetX(), playerPos.GetY(), nextPoint.GetX(), nextPoint.GetY());
-		if ( distance < playerSpeed )
-		{
-			playerPos = nextPoint;
-			arrived = true;
-		}
-		else
-			playerPos = playerPos + direction*playerSpeed;
 
-		if ( arrived )
-		{
-			if ( waypointIndex == wayPoints.size() - 1)
-				waypointIndex = 0;
-			else
-				waypointIndex++;
-			arrived = false;
-		}
-	}
+	////Get User Input
+	//if ( state != CHASE )
+	//{
+	//	nextPoint = wayPoints[waypointIndex];
+	//	MyVector direction = ( playerPos - nextPoint ).Normalize();
+	//	float distance = GetDistance(playerPos.GetX(), playerPos.GetY(), nextPoint.GetX(), nextPoint.GetY());
+	//	if ( distance < playerSpeed )
+	//	{
+	//		playerPos = nextPoint;
+	//		arrived = true;
+	//	}
+	//	else
+	//		playerPos = playerPos + direction*playerSpeed;
+
+	//	if ( arrived )
+	//	{
+	//		if ( waypointIndex == wayPoints.size() - 1)
+	//			waypointIndex = 0;
+	//		else
+	//			waypointIndex++;
+	//		arrived = false;
+	//	}
+	//}
 
 	if (waiterState == E_WAITER_PICKUP)
 	{
-		MyVector direction = (playerPos - chefStation).Normalize();
+		MyVector direction = (waiterPos - chefStation).Normalize();
 		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), chefStation.GetX(), chefStation.GetY());
 		if (distance < waiterSpeed)
 		{
@@ -462,11 +469,28 @@ void Update()
 		{
 			waiterState = E_WAITER_SERVE;
 			arrived = false;
+			foodReady = false;
 		}
 	}
 	if (waiterState == E_WAITER_SERVE)
 	{
 		//Find a table to serve
+		MyVector direction = (waiterPos - wayPoints[1].Normalize());
+		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), wayPoints[0].GetX(), wayPoints[0].GetY());
+		if (distance < waiterSpeed)
+		{
+			arrived = true;
+		}
+		else
+		{
+			waiterPos = waiterPos + direction * waiterSpeed;
+		}
+
+		if (arrived)
+		{
+			waiterState = E_WAITER_IDLE;
+			arrived = false;
+		}
 	}
 
 }
