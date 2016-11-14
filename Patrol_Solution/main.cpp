@@ -259,6 +259,7 @@ enum CUS_STATE
 };
 CUS_STATE customerState;
 const float customerSpeed = 0.01f;
+float eatSpeed = 0.1f;
 MyVector customerPos;
 
 // Caller related
@@ -334,8 +335,8 @@ int main()
 {
 	// INIT ///////////////////////////////////////////////////////////////
 	char *title = "Patrol";
-	width = 640;
-	height = 480;
+	width = 1280;
+	height = 720;
 	
 	glfwSetErrorCallback( ErrorCallBack );
 	if ( !glfwInit() )
