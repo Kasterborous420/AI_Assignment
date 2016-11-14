@@ -200,7 +200,9 @@ const int CHASE = 1;
 // Vector of Table positions
 vector<MyVector> tables;
 
+
 #pragma region AI_STATES
+// Chef related
 
 enum CHEF_STATE
 {
@@ -218,7 +220,7 @@ vector<MyVector> chefWaypoints;
 
 bool isDone; 
 
-
+// Waiter related
 enum WAITER_STATE
 {
 	E_WAITER_SERVE,
@@ -231,6 +233,33 @@ const float waiterSpeed = 0.02f;
 MyVector waiterPos;
 bool foodReady;
 
+// Customer related
+enum CUS_STATE
+{
+	E_CUSTOMER_IDLE,
+	E_CUSTOMER_MOVE,
+	E_CUSTOMER_ORDER,
+	E_CUSTOMER_EAT,
+	E_CUSTOMER_LEAVE,
+	E_CUSTOMER_MAX
+};
+CUS_STATE customerState;
+const float customerSpeed = 0.01f;
+float eatSpeed = 0.1f;
+MyVector customerPos;
+
+
+// Caller related
+enum CALLER_STATE
+{
+	E_CALLER_IDLE,
+	E_CALLER_CHECK,
+	E_CALLER_WAIT,
+	E_CALLER_CALL,
+	E_CALLER_MAX
+};
+CALLER_STATE callerState;
+MyVector callerPos;
 
 #pragma endregion
 
@@ -294,8 +323,8 @@ int main()
 {
 	// INIT ///////////////////////////////////////////////////////////////
 	char *title = "Patrol";
-	width = 640;
-	height = 480;
+	width = 1280;
+	height = 720;
 	
 	glfwSetErrorCallback( ErrorCallBack );
 	if ( !glfwInit() )
@@ -538,5 +567,3 @@ void Render( GLFWwindow* window )
 		glfwPollEvents();
 	}
 }
-
-// Wayne is cuck

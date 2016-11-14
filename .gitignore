@@ -5,3 +5,8 @@
 *.zip
 *.db
 *.opendb
+*.pdb
+*.idb
+*.ilk
+*.exe
+*.obj
