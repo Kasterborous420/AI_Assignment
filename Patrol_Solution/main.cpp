@@ -240,12 +240,16 @@ enum WAITER_STATE
 	E_WAITER_SERVE,
 	E_WAITER_IDLE,
 	E_WAITER_PICKUP,
+	E_WAITER_PICKUPCUSTOMER,
+	E_WAITER_MOVE,
 	E_WAITER_MAX
 };
 WAITER_STATE waiterState;
 const float waiterSpeed = 0.02f;
 MyVector waiterPos;
 bool foodReady;
+bool availableCustomers;
+bool customerPickup;
 
 // Customer related
 enum CUS_STATE
@@ -260,6 +264,7 @@ enum CUS_STATE
 CUS_STATE customerState;
 const float customerSpeed = 0.01f;
 float eatSpeed = 0.1f;
+bool customerSeated;
 MyVector customerPos;
 
 // Caller related
@@ -294,6 +299,10 @@ static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, 
 	{
 		foodReady = true;
 	}
+	if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
+	{
+		availableCustomers = true;
+	}
 }
 
 void SimulationInit()
@@ -305,22 +314,33 @@ void SimulationInit()
 	wayPoints.push_back( MyVector( -offset,  offset));
 	wayPoints.push_back( MyVector(  offset,  offset));
 	wayPoints.push_back( MyVector(  offset, -offset));
+
+	// Customer waypoint
+	wayPoints.push_back(MyVector(3.5f, 2.5f));
+
 	intrusionPoints.push_back( MyVector( -1.2f*offset, -0.3f*offset ) );
 	intrusionPoints.push_back( MyVector( -1.2f*offset,  0.3f*offset ) );
 	intrusionPoints.push_back( MyVector(  1.2f*offset,  0.3f*offset ) );
 	intrusionPoints.push_back( MyVector(  1.2f*offset, -0.3f*offset ) );
-	waiterPos.SetPosition (wayPoints[ 0 ].GetX(), wayPoints[ 0 ].GetY() );
 	int randomIndex = RandomInteger(1, 3);
 	enemyPos.SetPosition( intrusionPoints[ randomIndex ].GetX(), intrusionPoints[ randomIndex ].GetY() );
+
+	// Diner AI usage
+	waiterPos.SetPosition(wayPoints[0].GetX(), wayPoints[0].GetY());
+	customerPos.SetPosition(wayPoints[4].GetX(), wayPoints[4].GetY());
 	
 	// Set AI States
 	waiterState = E_WAITER_IDLE;
+	customerState = E_CUSTOMER_IDLE;
 	state = PATROL;
 
 	//Set AI Conditions
 	foodReady = false;
 	waypointIndex = 1;
 	arrived = false;
+	availableCustomers = false;
+	customerSeated = false;
+	customerPickup = false;
 }
 
 void PrepareFood()
@@ -431,6 +451,11 @@ void RenderObjects()
 	// Waiter
 	RenderFillCircle(waiterPos.GetX(), waiterPos.GetY(), playerRadius, 0.0f, 0.0f, 1.0f); // player object
 	RenderCircle(waiterPos.GetX(), waiterPos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // player proximity
+
+	// Customer (temp)
+	RenderFillCircle(customerPos.GetX(), customerPos.GetY(), playerRadius, 1.f, 1.f, 0.f); // object
+	RenderCircle(customerPos.GetX(), customerPos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // proximity
+
 	// Enemy
 	RenderFillCircle( enemyPos.GetX(), enemyPos.GetY(), enemyRadius, 0.0f, 1.0f, 0.0f ); // enemy object
 	// Waypoints
@@ -461,6 +486,11 @@ void RunFSM()
 	{
 		waiterState = E_WAITER_PICKUP;
 	}
+
+	if (availableCustomers)
+	{
+		waiterState = E_WAITER_PICKUPCUSTOMER;
+	}
 }
 
 void Update()
@@ -489,6 +519,8 @@ void Update()
 	//		arrived = false;
 	//	}
 	//}
+
+#pragma region Waiter Updates
 
 	if (waiterState == E_WAITER_PICKUP)
 	{
@@ -530,6 +562,63 @@ void Update()
 			arrived = false;
 		}
 	}
+	if (waiterState == E_WAITER_PICKUPCUSTOMER)
+	{
+		MyVector direction = (waiterPos - customerPos).Normalize();
+		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), customerPos.GetX(), customerPos.GetY());
+
+		if (distance < waiterSpeed)
+		{
+			customerPickup = true;
+		}
+		else
+		{
+			waiterPos = waiterPos + direction * waiterSpeed;
+		}
+
+		if (customerPickup)
+		{
+			waiterState = E_WAITER_MOVE;
+			customerPickup = false;
+		}
+	}
+
+	if (waiterState == E_WAITER_MOVE)
+	{
+		MyVector direction = (waiterPos - wayPoints[0]).Normalize();
+		float distance = GetDistance(waiterPos.GetX(), waiterPos.GetY(), wayPoints[0].GetX(), wayPoints[0].GetY());
+
+		if (distance < waiterSpeed)
+		{
+			customerSeated = true;
+		}
+		else
+		{
+			waiterPos = waiterPos + direction * waiterSpeed;
+		}
+
+		if (customerSeated)
+		{
+			waiterState = E_WAITER_IDLE;
+			customerSeated = false;
+		}
+	}
+
+#pragma endregion
+
+#pragma region Customer Updates
+
+	if (customerPickup)
+	{
+		customerState = E_CUSTOMER_MOVE;
+	}
+
+	if (customerState == E_CUSTOMER_MOVE)
+	{
+
+	}
+
+#pragma endregion
 
 }
 
