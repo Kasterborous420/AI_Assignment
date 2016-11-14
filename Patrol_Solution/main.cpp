@@ -490,6 +490,7 @@ void Update()
 		{
 			waiterState = E_WAITER_IDLE;
 			arrived = false;
+
 		}
 	}
 
