@@ -73,6 +73,19 @@ void RenderFillCircle( GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat 
 	glEnd();
 }
 
+void RenderRectangle(GLfloat x, GLfloat y, GLfloat r, GLfloat g, GLfloat b)
+{
+	glColor3f(r, g, b);
+	glBegin(GL_TRIANGLE_FAN);
+
+	glVertex2f(x, y);
+	glVertex2f(-x, y);
+	glVertex2f(-x, -y);
+	glVertex2f(x, -y);
+
+	glEnd();
+}
+
 #pragma region SHADER RELATED
 
 // SHADERS //////////////////////////////////////////////////////////////////
@@ -506,8 +519,6 @@ void RenderObjects()
 	{
 		RenderCircle(seats[i].GetX(), seats[i].GetY(), waypoint_radius, 0.6f, 0.3f, 0.f);
 	}
-
-
 	
 	//// Waiter
 	//RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.0f, 0.0f, 1.0f); // player object
