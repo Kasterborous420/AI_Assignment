@@ -73,15 +73,15 @@ void RenderFillCircle( GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat 
 	glEnd();
 }
 
-void RenderRectangle(GLfloat x, GLfloat y, GLfloat r, GLfloat g, GLfloat b)
+void RenderRectangle(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat r, GLfloat g, GLfloat b)
 {
 	glColor3f(r, g, b);
-	glBegin(GL_TRIANGLE_FAN);
+	glBegin(GL_POLYGON);
 
-	glVertex2f(x, y);
-	glVertex2f(-x, y);
-	glVertex2f(-x, -y);
-	glVertex2f(x, -y);
+	glVertex2f(x1, y1);
+	glVertex2f(x2, y1);
+	glVertex2f(x2, y2);
+	glVertex2f(x1, y2);
 
 	glEnd();
 }
@@ -210,11 +210,6 @@ int state;            // Current state value
 const int PATROL = 0; // Possible state definition
 const int CHASE = 1;
 
-// Vector of Table positions
-vector<MyVector> tables;
-vector<MyVector> seats;
-MyVector bigtable;
-
 #pragma region AI_STATES
 // Chef related
 enum CHEF_STATE
@@ -298,6 +293,12 @@ bool arrived;
 MyVector playerPos, enemyPos;
 vector <MyVector> wayPoints, intrusionPoints;
 MyVector nextPoint;
+
+// Vector of Table positions
+vector<MyVector> tables;
+vector<MyVector> seats;
+MyVector bigtable;
+MyVector tableCaller;
 
 // AI radius
 const float AI_radius = 0.325f;
@@ -519,7 +520,10 @@ void RenderObjects()
 	{
 		RenderCircle(seats[i].GetX(), seats[i].GetY(), waypoint_radius, 0.6f, 0.3f, 0.f);
 	}
-	
+
+	// Caller's table
+	RenderRectangle(7.f, 5.f, 7.5f, 2.5f, 0.5f, 0.5f, 0.5f);
+
 	//// Waiter
 	//RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.0f, 0.0f, 1.0f); // player object
 	//RenderCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // player proximity
