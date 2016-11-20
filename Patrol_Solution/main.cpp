@@ -251,6 +251,12 @@ MyVector waiterThreePos;
 bool foodReady;
 bool availableCustomers;
 bool customerPickup;
+MyVector waiterOneSpawn = MyVector(-9.f, 0.5f);
+MyVector waiterTwoSpawn = MyVector(-7.5f, 0.5f);
+MyVector waiterThreeSpawn = MyVector(-6.f, 0.5f);
+vector <MyVector> waiterOneWaypoints;
+vector <MyVector> waiterTwoWaypoints;
+vector <MyVector> waiterThreeWaypoints;
 
 // Customer related
 enum CUS_STATE
@@ -283,17 +289,8 @@ MyVector callerPos;
 
 #pragma endregion
 
-// Irrelevant
-const float playerSpeed = 0.0175f;
-const float enemySpeed = 0.0200f;
-const float playerRadius = 0.25f;
-const float enemyRadius = 0.1f;
-const float proximity = 0.4f;
-int waypointIndex;
+
 bool arrived;
-MyVector playerPos, enemyPos;
-vector <MyVector> wayPoints, intrusionPoints;
-MyVector nextPoint;
 
 // Vector of Table positions
 vector<CDiningTable*>tables;
@@ -302,8 +299,9 @@ MyVector bigtable;
 MyVector tableCaller;
 
 // AI radius
-const float AI_radius = 0.325f;
+const float AI_radius = 0.25f;
 const float waypoint_radius = 0.35f;
+const float proximity = 0.2f;
 
 static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, int mods )
 {
@@ -323,26 +321,9 @@ void SimulationInit()
 {
 	chefStation = MyVector(0.f, -3.f);
 	srand( ( unsigned ) time( NULL ) );
-	float offset = 2.0;
 	float seat_offset = 1.25f;
 	float big_seat_offset_diagonal = 2.f;
 	float big_seat_offset_straight = 2.75f;
-
-	// Waypoints
-	wayPoints.push_back( MyVector( -offset, -offset ));
-	wayPoints.push_back( MyVector( -offset,  offset));
-	wayPoints.push_back( MyVector(  offset,  offset));
-	wayPoints.push_back( MyVector(  offset, -offset));
-
-	// Customer spawn waypoint
-	wayPoints.push_back(MyVector(3.5f, 2.5f));
-
-	intrusionPoints.push_back( MyVector( -1.2f*offset, -0.3f*offset ) );
-	intrusionPoints.push_back( MyVector( -1.2f*offset,  0.3f*offset ) );
-	intrusionPoints.push_back( MyVector(  1.2f*offset,  0.3f*offset ) );
-	intrusionPoints.push_back( MyVector(  1.2f*offset, -0.3f*offset ) );
-	int randomIndex = RandomInteger(1, 3);
-	enemyPos.SetPosition( intrusionPoints[ randomIndex ].GetX(), intrusionPoints[ randomIndex ].GetY() );
 
 	// Table positions
 	CDiningTable *table_1 = new CDiningTable();
@@ -396,8 +377,25 @@ void SimulationInit()
 	seats.push_back(MyVector(bigtable.GetX(), bigtable.GetY() + big_seat_offset_straight));
 
 	// Diner AI usage
-	waiterOnePos.SetPosition(wayPoints[0].GetX(), wayPoints[0].GetY());
-	customerPos.SetPosition(wayPoints[4].GetX(), wayPoints[4].GetY());
+	//customerPos.SetPosition(wayPoints[4].GetX(), wayPoints[4].GetY());
+
+#pragma region AI Waypoints
+
+	// Waiter 1 Waypoints
+	waiterOneWaypoints.push_back(MyVector(waiterOneSpawn.GetX(), waiterOneSpawn.GetY()));
+
+	// Waiter 2 Waypoints
+	waiterTwoWaypoints.push_back(MyVector(waiterTwoSpawn.GetX(), waiterTwoSpawn.GetY()));
+
+	// Waiter 3 Waypoints
+	waiterThreeWaypoints.push_back(MyVector(waiterThreeSpawn.GetX(), waiterThreeSpawn.GetY()));
+
+	waiterOnePos.SetPosition(waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
+	waiterTwoPos.SetPosition(waiterTwoWaypoints[0].GetX(), waiterTwoWaypoints[0].GetY());
+	waiterThreePos.SetPosition(waiterThreeWaypoints[0].GetX(), waiterThreeWaypoints[0].GetY());
+
+#pragma endregion
+
 	
 	// Set AI States
 	waiterOneState = E_WAITER_IDLE;
@@ -406,7 +404,6 @@ void SimulationInit()
 
 	//Set AI Conditions
 	foodReady = false;
-	waypointIndex = 1;
 	arrived = false;
 	availableCustomers = false;
 	customerSeated = false;
@@ -535,9 +532,21 @@ void RenderObjects()
 	// Caller's table
 	RenderRectangle(7.f, 5.f, 7.5f, 2.5f, 0.5f, 0.5f, 0.5f);
 
-	// Waiter
-	RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.0f, 0.0f, 1.0f); // player object
-	RenderCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // player proximity
+	// Chef's station
+	RenderRectangle(-9.5f, -0.5f, -4.5f, -4.5f, 0.6f, 0.6f, 0.6f);
+	RenderRectangle(-9.25f, -0.75f, -5.5f, -4.25f, 0.2f, 0.2f, 0.2f);
+
+	// Waiter 1
+	RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 1 object
+	RenderCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius + proximity, 0.8f, 0.8f, 0.8f); // Waiter 1 proximity
+
+	// Waiter 2
+	RenderFillCircle(waiterTwoPos.GetX(), waiterTwoPos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 2 object
+	RenderCircle(waiterTwoPos.GetX(), waiterTwoPos.GetY(), AI_radius + proximity, 0.8f, 0.8f, 0.8f); // Waiter 2 proximity
+
+	// Waiter 3
+	RenderFillCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 3 object
+	RenderCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius + proximity, 0.8f, 0.8f, 0.8f); // Waiter 3 proximity
 
 	//// Customer (temp)
 	//RenderFillCircle(customerPos.GetX(), customerPos.GetY(), AI_radius, 1.f, 1.f, 0.f); // object
@@ -548,24 +557,13 @@ void RenderObjects()
 	//	RenderCircle(wayPoints[i].GetX(), wayPoints[i].GetY(), playerRadius + 0.1f, 1.0f, 0.0f, 0.0f); //  waypoints
 
 	//Food Station
-	RenderCircle(chefStation.GetX(), chefStation.GetY(), waypoint_radius, 1.0f, 0.0f, 0.0f);
+	//RenderCircle(chefStation.GetX(), chefStation.GetY(), waypoint_radius, 1.0f, 0.0f, 0.0f);
 		
 	glPopMatrix();
 }
 
 void RunFSM()
 {
-	bool enemyDetected = Detect( playerPos, enemyPos, playerRadius+proximity , enemyRadius );
-	switch ( state )
-	{
-		case PATROL:	if ( enemyDetected ) 
-							state = CHASE;
-						break;
-
-		case CHASE :	if ( !enemyDetected ) 
-							state = PATROL;
-						break;
-	}
 
 	if (foodReady)
 	{
@@ -611,8 +609,8 @@ void Update()
 	if (waiterOneState == E_WAITER_SERVE)
 	{
 		//Find a table to serve
-		MyVector direction = (waiterOnePos - wayPoints[1]).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), wayPoints[0].GetX(), wayPoints[0].GetY());
+		MyVector direction = (waiterOnePos - waiterOneWaypoints[0]).Normalize();
+		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
 		if (distance < waiterSpeed)
 		{
 			arrived = true;
@@ -653,8 +651,8 @@ void Update()
 
 	if (waiterOneState == E_WAITER_MOVE)
 	{
-		MyVector direction = (waiterOnePos - wayPoints[1]).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), wayPoints[1].GetX(), wayPoints[1].GetY());
+		MyVector direction = (waiterOnePos - waiterOneWaypoints[0]).Normalize();
+		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
 
 		if (distance < waiterSpeed)
 		{
@@ -678,8 +676,8 @@ void Update()
 
 	if (customerState == E_CUSTOMER_MOVE)
 	{
-		MyVector direction = (customerPos - wayPoints[1]).Normalize();
-		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), wayPoints[1].GetX(), wayPoints[1].GetY());
+		MyVector direction = (customerPos - waiterOneWaypoints[0]).Normalize();
+		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
 
 		if (distance < customerSpeed)
 		{
@@ -713,16 +711,6 @@ void Render( GLFWwindow* window )
 	
 		string stateString = "";
 		MyVector direction;
-		switch ( state )
-		{
-			case PATROL  :	stateString = "PATROL";
-							break;
-			case CHASE :	stateString = "CHASE";
-							direction = ( playerPos - enemyPos ).Normalize();
-							enemyPos = enemyPos + direction * enemySpeed;
-							playerPos = playerPos + direction  * playerSpeed;
-							break;
-		}
 		
 		RenderObjects();
 	
