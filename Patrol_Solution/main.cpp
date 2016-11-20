@@ -12,7 +12,8 @@
 #include <GLFw/glfw3.h>
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include "MyVector.h"
+#include "DiningTable.h"
+
 using namespace std;
 
 #pragma comment(linker,"/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
@@ -295,7 +296,7 @@ vector <MyVector> wayPoints, intrusionPoints;
 MyVector nextPoint;
 
 // Vector of Table positions
-vector<MyVector> tables;
+vector<CDiningTable*>tables;
 vector<MyVector> seats;
 MyVector bigtable;
 MyVector tableCaller;
@@ -344,28 +345,38 @@ void SimulationInit()
 	enemyPos.SetPosition( intrusionPoints[ randomIndex ].GetX(), intrusionPoints[ randomIndex ].GetY() );
 
 	// Table positions
-	tables.push_back(MyVector(-7.5f, 3.5f));
-	tables.push_back(MyVector(-3.f, 3.5f));
-	tables.push_back(MyVector(1.5f, 3.5f));
+	CDiningTable *table_1 = new CDiningTable();
+	table_1->SetPos(MyVector(-7.5f, 3.5f));
+	table_1->SetStatus(false);
+	CDiningTable *table_2 = new CDiningTable();
+	table_2->SetPos(MyVector(-3.f, 3.5f));
+	table_2->SetStatus(false);
+	CDiningTable *table_3 = new CDiningTable();
+	table_3->SetPos(MyVector(1.5f, 3.5f));
+	table_3->SetStatus(false);
+
+	tables.push_back(table_1);
+	tables.push_back(table_2);
+	tables.push_back(table_3);
 	bigtable.SetPosition(1.5f, -2.f);
 
 	// Table 1 seat positions
-	seats.push_back(MyVector(tables[0].GetX() - seat_offset, tables[0].GetY() - seat_offset));
-	seats.push_back(MyVector(tables[0].GetX() + seat_offset, tables[0].GetY() - seat_offset));
-	seats.push_back(MyVector(tables[0].GetX() + seat_offset, tables[0].GetY() + seat_offset));
-	seats.push_back(MyVector(tables[0].GetX() - seat_offset, tables[0].GetY() + seat_offset));
+	seats.push_back(MyVector(tables[0]->GetPos().GetX() - seat_offset, tables[0]->GetPos().GetY() - seat_offset));
+	seats.push_back(MyVector(tables[0]->GetPos().GetX() + seat_offset, tables[0]->GetPos().GetY() - seat_offset));
+	seats.push_back(MyVector(tables[0]->GetPos().GetX() + seat_offset, tables[0]->GetPos().GetY() + seat_offset));
+	seats.push_back(MyVector(tables[0]->GetPos().GetX() - seat_offset, tables[0]->GetPos().GetY() + seat_offset));
 
 	// Table 2 seat positions
-	seats.push_back(MyVector(tables[1].GetX() - seat_offset, tables[1].GetY() - seat_offset));
-	seats.push_back(MyVector(tables[1].GetX() + seat_offset, tables[1].GetY() - seat_offset));
-	seats.push_back(MyVector(tables[1].GetX() + seat_offset, tables[1].GetY() + seat_offset));
-	seats.push_back(MyVector(tables[1].GetX() - seat_offset, tables[1].GetY() + seat_offset));
+	seats.push_back(MyVector(tables[1]->GetPos().GetX() - seat_offset, tables[1]->GetPos().GetY() - seat_offset));
+	seats.push_back(MyVector(tables[1]->GetPos().GetX() + seat_offset, tables[1]->GetPos().GetY() - seat_offset));
+	seats.push_back(MyVector(tables[1]->GetPos().GetX() + seat_offset, tables[1]->GetPos().GetY() + seat_offset));
+	seats.push_back(MyVector(tables[1]->GetPos().GetX() - seat_offset, tables[1]->GetPos().GetY() + seat_offset));
 
 	// Table 3 seat positions
-	seats.push_back(MyVector(tables[2].GetX() - seat_offset, tables[2].GetY() - seat_offset));
-	seats.push_back(MyVector(tables[2].GetX() + seat_offset, tables[2].GetY() - seat_offset));
-	seats.push_back(MyVector(tables[2].GetX() + seat_offset, tables[2].GetY() + seat_offset));
-	seats.push_back(MyVector(tables[2].GetX() - seat_offset, tables[2].GetY() + seat_offset));
+	seats.push_back(MyVector(tables[2]->GetPos().GetX() - seat_offset, tables[2]->GetPos().GetY() - seat_offset));
+	seats.push_back(MyVector(tables[2]->GetPos().GetX() + seat_offset, tables[2]->GetPos().GetY() - seat_offset));
+	seats.push_back(MyVector(tables[2]->GetPos().GetX() + seat_offset, tables[2]->GetPos().GetY() + seat_offset));
+	seats.push_back(MyVector(tables[2]->GetPos().GetX() - seat_offset, tables[2]->GetPos().GetY() + seat_offset));
 
 	// Big table seat position
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_diagonal, bigtable.GetY() - big_seat_offset_diagonal));
@@ -510,7 +521,7 @@ void RenderObjects()
 	// Tables
 	for (unsigned int i = 0; i < tables.size(); i++)
 	{
-		RenderFillCircle(tables[i].GetX(), tables[i].GetY(), 1.f, 0.6f, 0.3f, 0.f);
+		RenderFillCircle(tables[i]->GetPos().GetX(), tables[i]->GetPos().GetY(), 1.f, 0.6f, 0.3f, 0.f);
 	}
 
 	RenderFillCircle(bigtable.GetX(), bigtable.GetY(), 2.f, 0.6f, 0.3f, 0.f);
@@ -524,9 +535,9 @@ void RenderObjects()
 	// Caller's table
 	RenderRectangle(7.f, 5.f, 7.5f, 2.5f, 0.5f, 0.5f, 0.5f);
 
-	//// Waiter
-	//RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.0f, 0.0f, 1.0f); // player object
-	//RenderCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // player proximity
+	// Waiter
+	RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.0f, 0.0f, 1.0f); // player object
+	RenderCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // player proximity
 
 	//// Customer (temp)
 	//RenderFillCircle(customerPos.GetX(), customerPos.GetY(), AI_radius, 1.f, 1.f, 0.f); // object
@@ -536,8 +547,8 @@ void RenderObjects()
 	//for (unsigned int i = 0; i < wayPoints.size(); i++ )
 	//	RenderCircle(wayPoints[i].GetX(), wayPoints[i].GetY(), playerRadius + 0.1f, 1.0f, 0.0f, 0.0f); //  waypoints
 
-	////Food Station
-	//RenderCircle(chefStation.GetX(), chefStation.GetY(), waypoint_radius, 1.0f, 0.0f, 0.0f);
+	//Food Station
+	RenderCircle(chefStation.GetX(), chefStation.GetY(), waypoint_radius, 1.0f, 0.0f, 0.0f);
 		
 	glPopMatrix();
 }
@@ -574,30 +585,6 @@ void RunFSM()
 
 void Update()
 {
-
-	////Get User Input
-	//if ( state != CHASE )
-	//{
-	//	nextPoint = wayPoints[waypointIndex];
-	//	MyVector direction = ( playerPos - nextPoint ).Normalize();
-	//	float distance = GetDistance(playerPos.GetX(), playerPos.GetY(), nextPoint.GetX(), nextPoint.GetY());
-	//	if ( distance < playerSpeed )
-	//	{
-	//		playerPos = nextPoint;
-	//		arrived = true;
-	//	}
-	//	else
-	//		playerPos = playerPos + direction*playerSpeed;
-
-	//	if ( arrived )
-	//	{
-	//		if ( waypointIndex == wayPoints.size() - 1)
-	//			waypointIndex = 0;
-	//		else
-	//			waypointIndex++;
-	//		arrived = false;
-	//	}
-	//}
 
 #pragma region Waiter Updates
 
