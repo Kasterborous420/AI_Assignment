@@ -285,7 +285,7 @@ enum CALLER_STATE
 	E_CALLER_MAX
 };
 CALLER_STATE callerState;
-MyVector callerPos;
+const MyVector callerPos = MyVector(6.25f, 3.5f);
 
 #pragma endregion
 
@@ -530,7 +530,10 @@ void RenderObjects()
 	}
 
 	// Caller's table
-	RenderRectangle(7.f, 5.f, 7.5f, 2.5f, 0.5f, 0.5f, 0.5f);
+	RenderRectangle(7.f, 4.25f, 7.25f, 2.75f, 0.5f, 0.5f, 0.5f);
+
+	// Caller
+	RenderFillCircle(callerPos.x, callerPos.y, AI_radius, 0.f, 1.f, 0.f); // Caller object
 
 	// Chef's station
 	RenderRectangle(-9.5f, -0.5f, -4.5f, -4.5f, 0.6f, 0.6f, 0.6f);
@@ -729,7 +732,7 @@ void Render( GLFWwindow* window )
 
 		RenderText("State : ", face, -0.95f, 0.925f, 0.55f, 0.55f);
 		RenderText( stateString , face, -0.8f, 0.925f, 0.55f, 0.55f );
-		RenderText("Player - Blue     Enemy - Green     Red - Patrol Point", face, -0.6f, 0.925f, 0.55f, 0.55f);
+		RenderText("Player - Blue     Enemy - Green     Red - Patrol Point", face, -6.f, 5.f, 0.55f, 0.55f);
 
 		glfwSwapBuffers( window );
 		glfwPollEvents();
