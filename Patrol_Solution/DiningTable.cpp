@@ -22,7 +22,7 @@ MyVector CDiningTable::GetPos()
 
 bool CDiningTable::GetStatus()
 {
-	if (isEating)
+	if (isOccupied)
 	{
 		return true;
 	}
@@ -32,9 +32,9 @@ bool CDiningTable::GetStatus()
 	}
 }
 
-void CDiningTable::SetStatus(bool isEat)
+void CDiningTable::SetStatus(bool occupy)
 {
-	this->isEating = isEat;
+	this->isOccupied = occupy;
 }
 
 void CDiningTable::SetSize(unsigned int size)
