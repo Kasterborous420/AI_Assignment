@@ -699,6 +699,42 @@ void Update()
 
 }
 
+void RenderDebugText()
+{
+	// Waiter 1 Debug text
+	RenderText("WaiterState: ", face, waiterOnePos.GetX(), waiterOnePos.GetY() + 1.f, 0.55f, 0.55f);
+	
+	switch (waiterOneState)
+	{
+	case E_WAITER_IDLE:
+	{
+		RenderText("IDLE ", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+	}
+	case E_WAITER_MOVE:
+	{
+		RenderText("MOVE", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+	}
+	case E_WAITER_PICKUP:
+	{
+		RenderText("PICKUP_FOOD", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+	}
+	case E_WAITER_PICKUPCUSTOMER:
+	{
+		RenderText("PICKUP_CUSTOMER", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+	}
+	case E_WAITER_SERVE:
+	{
+		RenderText("SERVE", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+	}
+	}
+	
+	// Waiter 2 Debug Text
+	RenderText("WaiterState: ", face, waiterTwoPos.GetX(), waiterTwoPos.GetY() + 1.f, 0.55f, 0.55f);
+	
+	// Waiter 3 Debug Text
+	RenderText("WaiterState: ", face, waiterThreePos.GetX(), waiterThreePos.GetY() + 1.f, 0.55f, 0.55f);
+
+}
 void Render( GLFWwindow* window )
 {
 	while ( !glfwWindowShouldClose( window) )
