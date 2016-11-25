@@ -4,7 +4,7 @@ class CDiningTable
 {
 private:
 	MyVector pos;
-	bool isEating;
+	bool isOccupied;
 	unsigned int tableSize;
 public:
 

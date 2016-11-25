@@ -325,6 +325,8 @@ void SimulationInit()
 	float big_seat_offset_diagonal = 2.f;
 	float big_seat_offset_straight = 2.75f;
 
+#pragma region Furniture positions
+
 	// Table positions
 	CDiningTable *table_1 = new CDiningTable();
 	table_1->SetPos(MyVector(-7.5f, 3.5f));
@@ -375,6 +377,8 @@ void SimulationInit()
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_diagonal, bigtable.GetY() + big_seat_offset_diagonal));
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_straight, bigtable.GetY()));
 	seats.push_back(MyVector(bigtable.GetX(), bigtable.GetY() + big_seat_offset_straight));
+
+#pragma endregion
 
 	// Diner AI usage
 	//customerPos.SetPosition(wayPoints[4].GetX(), wayPoints[4].GetY());
