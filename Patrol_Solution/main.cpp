@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <windows.h>
 #include <time.h>
-#include <math.h>
+//#include <math.h>
 #include <string>
 #include <ostream>
 #include <sstream>
@@ -11,15 +11,15 @@
 #include <GL/glew.h>
 #include <GLFw/glfw3.h>
 #include <ft2build.h>
-#include FT_FREETYPE_H
 #include "DiningTable.h"
 
+#include FT_FREETYPE_H
 using namespace std;
 
 #pragma comment(linker,"/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
 
-#pragma region DO NOT TOUCH
 
+#pragma region DO NOT TOUCH
 void Render( GLFWwindow* window );
 
 int RandomInteger( int lowerLimit, int upperLimit )
@@ -34,7 +34,9 @@ string itos( const long value )
 	buffer << value; 
 	return buffer.str();
 }
-  
+
+
+
 float GetDistance(float x1, float y1, float x2, float y2) { return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); } // OK
 
 // Within range
@@ -87,14 +89,12 @@ void RenderRectangle(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2, GLfloat r, 
 	glEnd();
 }
 
-#pragma region SHADER RELATED
-
 // SHADERS //////////////////////////////////////////////////////////////////
 const char *VERTEX_SHADER = ""
 "#version 410 core\n"
 "in vec4 in_Position;\n"
 "out vec2 texCoords;\n"
-"void main(void2 {\n"
+"void main(void) {\n"
 "    gl_Position = vec4(in_Position.xy, 0, 1);\n"
 "    texCoords = in_Position.zw;\n"
 "}\n";
@@ -117,10 +117,6 @@ GLuint vs{ 0 }, fs{ 0 }, program{ 0 };
 
 ///////////////////////////////////////////////////////////////////
 
-#pragma endregion
-
-#pragma region CALLBACKS
-
 static void ErrorCallBack ( int error, const char*description )
 {
 	fputs( description, stderr );
@@ -138,8 +134,6 @@ static void ResizeCallBack(GLFWwindow *window, int w, int h)
 	gluPerspective( 60, (float) w / (float) h, 0, 100 );
 	glMatrixMode( GL_MODELVIEW );
 }
-
-#pragma endregion
 
 // Free Type //////////////////////////////////////////////////////
 FT_Library ft_lib{ nullptr };
@@ -210,6 +204,26 @@ void DoExit()
 int state;            // Current state value
 const int PATROL = 0; // Possible state definition
 const int CHASE = 1;
+const float playerSpeed = 0.0175f;
+const float enemySpeed = 0.0200f;
+const float playerRadius = 0.25f;
+const float enemyRadius = 0.1f;
+int waypointIndex;
+bool arrived;
+MyVector playerPos, enemyPos;
+vector <MyVector> wayPoints, intrusionPoints;
+MyVector nextPoint;
+
+// Vector of Table positions
+vector<CDiningTable*>tables;
+vector<MyVector> seats;
+MyVector bigtable;
+MyVector tableCaller;
+
+// AI radius
+const float AI_radius = 0.25f;
+const float waypoint_radius = 0.35f;
+const float proximity = 0.2f;
 
 #pragma region AI_STATES
 // Chef related
@@ -229,7 +243,7 @@ MyVector chefTwoPos;
 MyVector chefStation;
 vector<MyVector> chefWaypoints;
 
-bool isDone; 
+bool isDone;
 
 // Waiter related
 enum WAITER_STATE
@@ -289,24 +303,10 @@ const MyVector callerPos = MyVector(6.25f, 3.5f);
 
 #pragma endregion
 
-
-bool arrived;
-
-// Vector of Table positions
-vector<CDiningTable*>tables;
-vector<MyVector> seats;
-MyVector bigtable;
-MyVector tableCaller;
-
-// AI radius
-const float AI_radius = 0.25f;
-const float waypoint_radius = 0.35f;
-const float proximity = 0.2f;
-
 static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, int mods )
 {
-	if ( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
-		glfwSetWindowShouldClose( window, GL_TRUE );
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
 	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
 	{
 		foodReady = true;
@@ -320,7 +320,7 @@ static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, 
 void SimulationInit()
 {
 	chefStation = MyVector(0.f, -3.f);
-	srand( ( unsigned ) time( NULL ) );
+	srand((unsigned)time(NULL));
 	float seat_offset = 1.25f;
 	float big_seat_offset_diagonal = 2.f;
 	float big_seat_offset_straight = 2.75f;
@@ -331,9 +331,11 @@ void SimulationInit()
 	CDiningTable *table_1 = new CDiningTable();
 	table_1->SetPos(MyVector(-7.5f, 3.5f));
 	table_1->SetStatus(false);
+
 	CDiningTable *table_2 = new CDiningTable();
 	table_2->SetPos(MyVector(-3.f, 3.5f));
 	table_2->SetStatus(false);
+
 	CDiningTable *table_3 = new CDiningTable();
 	table_3->SetPos(MyVector(1.5f, 3.5f));
 	table_3->SetStatus(false);
@@ -377,12 +379,16 @@ void SimulationInit()
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_diagonal, bigtable.GetY() + big_seat_offset_diagonal));
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_straight, bigtable.GetY()));
 	seats.push_back(MyVector(bigtable.GetX(), bigtable.GetY() + big_seat_offset_straight));
+<<<<<<< HEAD
 
 #pragma endregion
 
 	// Diner AI usage
 	//customerPos.SetPosition(wayPoints[4].GetX(), wayPoints[4].GetY());
 
+=======
+	
+>>>>>>> 0bf1af88094a1955a5f7a022be49d1b7a0c7d922
 #pragma region AI Waypoints
 
 	// Waiter 1 Waypoints
@@ -400,7 +406,7 @@ void SimulationInit()
 
 #pragma endregion
 
-	
+
 	// Set AI States
 	waiterOneState = E_WAITER_IDLE;
 	customerState = E_CUSTOMER_IDLE;
@@ -426,8 +432,8 @@ int main()
 {
 	// INIT ///////////////////////////////////////////////////////////////
 	char *title = "Patrol";
-	width = 1400;
-	height = 750;
+	width = 1280;
+	height = 720;
 	
 	glfwSetErrorCallback( ErrorCallBack );
 	if ( !glfwInit() )
@@ -517,7 +523,7 @@ int main()
 void RenderObjects()
 {	
 	glPushMatrix();
-	glTranslatef( 0.0f, 0.0f, -10.0f );
+	glTranslatef(0.0f, 0.0f, -10.0f);
 
 	// Tables
 	for (unsigned int i = 0; i < tables.size(); i++)
@@ -565,13 +571,12 @@ void RenderObjects()
 
 	//Food Station
 	//RenderCircle(chefStation.GetX(), chefStation.GetY(), waypoint_radius, 1.0f, 0.0f, 0.0f);
-		
+
 	glPopMatrix();
 }
 
 void RunFSM()
 {
-
 	if (foodReady)
 	{
 		waiterOneState = E_WAITER_PICKUP;
@@ -584,13 +589,12 @@ void RunFSM()
 
 	/*if (customerPickup)
 	{
-		customerState = E_CUSTOMER_MOVE;
+	customerState = E_CUSTOMER_MOVE;
 	}*/
 }
 
 void Update()
 {
-
 #pragma region Waiter Updates
 
 	if (waiterOneState == E_WAITER_PICKUP)
@@ -703,45 +707,51 @@ void Update()
 	}
 
 #pragma endregion
-
 }
 
 void RenderDebugText()
 {
 	// Waiter 1 Debug text
-	RenderText("WaiterState: ", face, waiterOnePos.GetX(), waiterOnePos.GetY() + 1.f, 0.55f, 0.55f);
-	
+
+	RenderText("WaiterState: ", face, -0.95f, 0.925f, 0.55f, 0.55f);
+
 	switch (waiterOneState)
 	{
 	case E_WAITER_IDLE:
 	{
-		RenderText("IDLE ", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+		RenderText("IDLE", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		break;
 	}
 	case E_WAITER_MOVE:
 	{
-		RenderText("MOVE", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+		RenderText("MOVE", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		break;
 	}
 	case E_WAITER_PICKUP:
 	{
-		RenderText("PICKUP_FOOD", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+		RenderText("PICKUP_FOOD", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		break;
 	}
 	case E_WAITER_PICKUPCUSTOMER:
 	{
-		RenderText("PICKUP_CUSTOMER", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+		RenderText("PICKUP_CUSTOMER", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		break;
 	}
 	case E_WAITER_SERVE:
 	{
-		RenderText("SERVE", face, waiterOnePos.GetX(), waiterOnePos.GetY() + .5f, 0.55f, 0.55f);
+		RenderText("SERVE", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		break;
 	}
 	}
-	
+
 	// Waiter 2 Debug Text
 	RenderText("WaiterState: ", face, waiterTwoPos.GetX(), waiterTwoPos.GetY() + 1.f, 0.55f, 0.55f);
-	
+
 	// Waiter 3 Debug Text
 	RenderText("WaiterState: ", face, waiterThreePos.GetX(), waiterThreePos.GetY() + 1.f, 0.55f, 0.55f);
 
 }
+
 void Render( GLFWwindow* window )
 {
 	while ( !glfwWindowShouldClose( window) )
@@ -754,6 +764,16 @@ void Render( GLFWwindow* window )
 	
 		string stateString = "";
 		MyVector direction;
+		switch ( state )
+		{
+			case PATROL  :	stateString = "PATROL";
+							break;
+			case CHASE :	stateString = "CHASE";
+							direction = ( playerPos - enemyPos ).Normalize();
+							enemyPos = enemyPos + direction * enemySpeed;
+							playerPos = playerPos + direction  * playerSpeed;
+							break;
+		}
 		
 		RenderObjects();
 	
@@ -770,9 +790,11 @@ void Render( GLFWwindow* window )
 
 		FT_Set_Pixel_Sizes( face, 0, 50 );
 
-		RenderText("State : ", face, -0.95f, 0.925f, 0.55f, 0.55f);
+		RenderDebugText();
+
+		/*RenderText("State : ", face, -0.95f, 0.925f, 0.55f, 0.55f);
 		RenderText( stateString , face, -0.8f, 0.925f, 0.55f, 0.55f );
-		RenderText("Player - Blue     Enemy - Green     Red - Patrol Point", face, -6.f, 5.f, 0.55f, 0.55f);
+		RenderText("Player - Blue     Enemy - Green     Red - Patrol Point", face, -0.6f, 0.925f, 0.55f, 0.55f);*/
 
 		glfwSwapBuffers( window );
 		glfwPollEvents();
