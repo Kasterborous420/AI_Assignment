@@ -234,12 +234,10 @@ enum CHEF_STATE
 	E_CHEF_WAIT,
 	E_CHEF_MAX
 };
-CHEF_STATE chefOneState;
-CHEF_STATE chefTwoState;
+CHEF_STATE chefState;
 const float chefSpeed = 0.01f;
 const float cookTime = 5.0f;
-MyVector chefOnePos;
-MyVector chefTwoPos;
+MyVector chefPos;
 MyVector chefStation;
 vector<MyVector> chefWaypoints;
 
@@ -379,16 +377,12 @@ void SimulationInit()
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_diagonal, bigtable.GetY() + big_seat_offset_diagonal));
 	seats.push_back(MyVector(bigtable.GetX() - big_seat_offset_straight, bigtable.GetY()));
 	seats.push_back(MyVector(bigtable.GetX(), bigtable.GetY() + big_seat_offset_straight));
-<<<<<<< HEAD
 
 #pragma endregion
 
 	// Diner AI usage
 	//customerPos.SetPosition(wayPoints[4].GetX(), wayPoints[4].GetY());
 
-=======
-	
->>>>>>> 0bf1af88094a1955a5f7a022be49d1b7a0c7d922
 #pragma region AI Waypoints
 
 	// Waiter 1 Waypoints
