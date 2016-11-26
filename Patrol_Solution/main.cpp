@@ -19,8 +19,9 @@ using namespace std;
 #pragma comment(linker,"/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
 
 
-#pragma region DO NOT TOUCH
-void Render(GLFWwindow* window);
+
+#pragma region BORING SHIT
+void Render( GLFWwindow* window );
 
 int RandomInteger(int lowerLimit, int upperLimit)
 {
@@ -201,18 +202,11 @@ void DoExit()
 
 #pragma endregion
 
-int state;            // Current state value
-const int PATROL = 0; // Possible state definition
-const int CHASE = 1;
-const float playerSpeed = 0.0175f;
-const float enemySpeed = 0.0200f;
-const float playerRadius = 0.25f;
-const float enemyRadius = 0.1f;
-int waypointIndex;
 bool arrived;
-MyVector playerPos, enemyPos;
-vector <MyVector> wayPoints, intrusionPoints;
-MyVector nextPoint;
+
+// Time ??
+
+clock_t t1,t2;
 
 // Vector of Table positions
 vector<CDiningTable*>tables;
@@ -240,8 +234,17 @@ const float cookTime = 5.0f;
 MyVector chefPos;
 MyVector chefStation;
 vector<MyVector> chefWaypoints;
+bool isAtStation;
+bool chefArrived;
 
-bool isDone;
+//List of orders
+/*
+	Pass in table numbers for the order
+*/
+vector<unsigned int> ListOfOrders;
+
+MyVector cookingStation_1 = MyVector(-5.f, -2.5f);
+// bool isCooking_1 = false;
 
 // Waiter related
 enum WAITER_STATE
@@ -266,6 +269,12 @@ bool customerPickup;
 MyVector waiterOneSpawn = MyVector(-9.f, 0.5f);
 MyVector waiterTwoSpawn = MyVector(-7.5f, 0.5f);
 MyVector waiterThreeSpawn = MyVector(-6.f, 0.5f);
+
+bool waiter1_isBusy;
+bool waiter2_isBusy;
+bool waiter3_isBusy;
+
+
 vector <MyVector> waiterOneWaypoints;
 vector <MyVector> waiterTwoWaypoints;
 vector <MyVector> waiterThreeWaypoints;
@@ -404,10 +413,15 @@ void SimulationInit()
 #pragma endregion
 
 
+	//TEST ORDER
+	//Add an order from table 1
+	ListOfOrders.push_back(1);
+
+
 	// Set AI States
 	waiterOneState = E_WAITER_IDLE;
 	customerState = E_CUSTOMER_IDLE;
-	state = PATROL;
+
 
 	//Set AI Conditions
 	foodReady = false;
@@ -415,15 +429,14 @@ void SimulationInit()
 	availableCustomers = false;
 	customerSeated = false;
 	customerPickup = false;
+	isAtStation = false;
+
+	waiter1_isBusy = false;
+	waiter2_isBusy = false;
+	waiter3_isBusy = false;
+	chefArrived = false;
 }
 
-void PrepareFood()
-{
-	//==========PSEUDO CODE============//
-	//if order comes in, cook the food
-	//when food is done change boolean foodReady to true;
-	foodReady = true;
-}
 
 int main()
 {
@@ -554,9 +567,14 @@ void RenderObjects()
 	// Caller
 	RenderFillCircle(callerPos.x, callerPos.y, AI_radius, 0.f, 1.f, 0.f); // Caller object
 
-	// Chef's station
+	// CHEFS STUFF
+
+	// Render the bigger rectangle
 	RenderRectangle(-9.5f, -0.5f, -4.5f, -4.5f, 0.6f, 0.6f, 0.6f);
+	// Render the smaller rectangle
 	RenderRectangle(-9.25f, -0.75f, -5.5f, -4.25f, 0.2f, 0.2f, 0.2f);
+	// Render the cooking station 
+	RenderFillCircle(cookingStation_1.GetX(), cookingStation_1.GetY(), 0.4f, 1.0f, 0.f, 0.f);
 
 	// Waiter 1
 	RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 1 object
@@ -734,6 +752,122 @@ void Update()
 			customerSeated = false;
 		}
 	}
+#pragma endregion
+
+#pragma region Chef Updates
+	// When chef is idle with no cooking
+	if (chefState == E_CHEF_WAIT)
+	{
+		//if there is an existing order
+		if (ListOfOrders.size() > 0)
+		{
+			MyVector direction = (chefPos - cookingStation_1).Normalize();
+			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), cookingStation_1.GetX(), cookingStation_1.GetY());
+
+			if (distance < chefSpeed)
+			{
+				isAtStation = true;
+			}
+			else
+			{
+				chefPos = chefPos + direction * chefSpeed;
+			}
+
+			if (isAtStation)
+			{
+				chefState = E_CHEF_COOK;
+				isAtStation = false;
+
+				// Start the cook time
+				// Assign current time value to t
+				t1 = clock();
+
+			}
+		}
+	}
+	if (chefState == E_CHEF_COOK)
+	{
+		// Get Current Time 
+		// Assign to t2
+		t2 = clock();
+
+		// If elasped time is more than 5 seconds
+		if (((float)(t2 - t1) / CLOCKS_PER_SEC) >= 5.f)
+		{
+			foodReady == true;
+			chefState = E_CHEF_SERVE;
+		}
+	}
+
+	if (chefState == E_CHEF_SERVE)
+	{
+		if (waiter1_isBusy)
+		{
+			if (waiter2_isBusy)
+			{
+				if (!waiter3_isBusy)
+				{
+					MyVector direction = (chefPos - waiterThreeSpawn).Normalize();
+					float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiterThreeSpawn.GetX(), waiterThreeSpawn.GetY());
+
+					if (distance < chefSpeed)
+					{
+						chefArrived = true;
+					}
+					else
+					{
+						chefPos = chefPos + direction * chefSpeed;
+					}
+
+					if (isAtStation)
+					{
+						chefState = E_CHEF_WAIT;
+						chefArrived = false;
+					}
+				}
+			}
+			else if (!waiter2_isBusy)
+			{
+				MyVector direction = (chefPos - waiterTwoSpawn).Normalize();
+				float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiterTwoSpawn.GetX(), waiterTwoSpawn.GetY());
+
+				if (distance < chefSpeed)
+				{
+					chefArrived = true;
+				}
+				else
+				{
+					chefPos = chefPos + direction * chefSpeed;
+				}
+
+				if (isAtStation)
+				{
+					chefState = E_CHEF_WAIT;
+					chefArrived = false;
+				}
+			}
+		}
+		else if (!waiter1_isBusy)
+		{
+			MyVector direction = (chefPos - waiterOneSpawn).Normalize();
+			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiterOneSpawn.GetX(), waiterOneSpawn.GetY());
+
+			if (distance < chefSpeed)
+			{
+				chefArrived = true;
+			}
+			else
+			{
+				chefPos = chefPos + direction * chefSpeed;
+			}
+
+			if (isAtStation)
+			{
+				chefState = E_CHEF_WAIT;
+				chefArrived = false;
+			}
+		}
+	}
 
 #pragma endregion
 }
@@ -748,27 +882,27 @@ void RenderDebugText()
 	{
 	case E_WAITER_IDLE:
 	{
-		RenderText("IDLE", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		RenderText("IDLE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
 	case E_WAITER_MOVE:
 	{
-		RenderText("MOVE", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		RenderText("MOVE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
 	case E_WAITER_PICKUP:
 	{
-		RenderText("PICKUP_FOOD", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		RenderText("PICKUP_FOOD", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
 	case E_WAITER_PICKUPCUSTOMER:
 	{
-		RenderText("PICKUP_CUSTOMER", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		RenderText("PICKUP_CUSTOMER", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
 	case E_WAITER_SERVE:
 	{
-		RenderText("SERVE", face, -0.85f, 0.925f, 0.55f, 0.55f);
+		RenderText("SERVE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
 	}
@@ -776,8 +910,6 @@ void RenderDebugText()
 	// Waiter 2 Debug Text
 	RenderText("WaiterState: ", face, waiterTwoPos.GetX(), waiterTwoPos.GetY() + 1.f, 0.55f, 0.55f);
 
-	// Waiter 3 Debug Text
-	RenderText("WaiterState: ", face, waiterThreePos.GetX(), waiterThreePos.GetY() + 1.f, 0.55f, 0.55f);
 
 }
 
@@ -793,17 +925,18 @@ void Render(GLFWwindow* window)
 
 		string stateString = "";
 		MyVector direction;
-		switch (state)
-		{
-		case PATROL:	stateString = "PATROL";
-			break;
-		case CHASE:	stateString = "CHASE";
-			direction = (playerPos - enemyPos).Normalize();
-			enemyPos = enemyPos + direction * enemySpeed;
-			playerPos = playerPos + direction  * playerSpeed;
-			break;
-		}
 
+		/*switch ( state )
+		{
+			case PATROL  :	stateString = "PATROL";
+							break;
+			case CHASE :	stateString = "CHASE";
+							direction = ( playerPos - enemyPos ).Normalize();
+							enemyPos = enemyPos + direction * enemySpeed;
+							playerPos = playerPos + direction  * playerSpeed;
+							break;
+		}*/
+		
 		RenderObjects();
 
 		// Bind stuff
