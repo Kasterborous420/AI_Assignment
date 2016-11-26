@@ -20,18 +20,18 @@ using namespace std;
 
 
 #pragma region DO NOT TOUCH
-void Render( GLFWwindow* window );
+void Render(GLFWwindow* window);
 
-int RandomInteger( int lowerLimit, int upperLimit )
+int RandomInteger(int lowerLimit, int upperLimit)
 {
-	return rand() % ( upperLimit - lowerLimit + 1 ) + lowerLimit;
+	return rand() % (upperLimit - lowerLimit + 1) + lowerLimit;
 }
 
 // long integer to string
-string itos( const long value )
-{ 
-	ostringstream buffer; 
-	buffer << value; 
+string itos(const long value)
+{
+	ostringstream buffer;
+	buffer << value;
 	return buffer.str();
 }
 
@@ -40,7 +40,7 @@ string itos( const long value )
 float GetDistance(float x1, float y1, float x2, float y2) { return sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)); } // OK
 
 // Within range
-bool Detect( MyVector pos1, MyVector pos2, float radius1, float radius2)
+bool Detect(MyVector pos1, MyVector pos2, float radius1, float radius2)
 {
 	bool detect = false;
 	float totalRadius = radius1 + radius2;
@@ -49,29 +49,29 @@ bool Detect( MyVector pos1, MyVector pos2, float radius1, float radius2)
 	return detect;
 }
 
-void RenderCircle( GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat g, GLfloat b )
+void RenderCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat g, GLfloat b)
 {
 	int n = 360;
-	glColor3f( r, g, b );
-	glBegin( GL_POINTS );
-	for ( int i = 0; i <= n; i++ )
+	glColor3f(r, g, b);
+	glBegin(GL_POINTS);
+	for (int i = 0; i <= n; i++)
 	{
-		float angle = (float) ( i * ( 2.0 * 3.14159 / n ) );
-		glVertex2f( x + radius * cos( angle ), y + radius * sin( angle ) );
+		float angle = (float)(i * (2.0 * 3.14159 / n));
+		glVertex2f(x + radius * cos(angle), y + radius * sin(angle));
 	}
 	glEnd();
 }
 
-void RenderFillCircle( GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat g, GLfloat b )
+void RenderFillCircle(GLfloat x, GLfloat y, GLfloat radius, GLfloat r, GLfloat g, GLfloat b)
 {
 	int n = 360;
-	glColor3f ( r, g, b );
-	glBegin(GL_TRIANGLE_FAN );
-	glVertex2f( x, y );
+	glColor3f(r, g, b);
+	glBegin(GL_TRIANGLE_FAN);
+	glVertex2f(x, y);
 	for (int i = 0; i <= n; i++)
 	{
-		float angle = (float) ( i * ( 2.0 * 3.14159 / n ) );
-		glVertex2f( x + radius * cos( angle ), y + radius * sin( angle ) );
+		float angle = (float)(i * (2.0 * 3.14159 / n));
+		glVertex2f(x + radius * cos(angle), y + radius * sin(angle));
 	}
 	glEnd();
 }
@@ -117,9 +117,9 @@ GLuint vs{ 0 }, fs{ 0 }, program{ 0 };
 
 ///////////////////////////////////////////////////////////////////
 
-static void ErrorCallBack ( int error, const char*description )
+static void ErrorCallBack(int error, const char*description)
 {
-	fputs( description, stderr );
+	fputs(description, stderr);
 }
 
 float width, height;
@@ -128,11 +128,11 @@ void Render(GLFWwindow* window);
 
 static void ResizeCallBack(GLFWwindow *window, int w, int h)
 {
-	glViewport( 0, 0, w, h );
-	glMatrixMode( GL_PROJECTION );
+	glViewport(0, 0, w, h);
+	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective( 60, (float) w / (float) h, 0, 100 );
-	glMatrixMode( GL_MODELVIEW );
+	gluPerspective(60, (float)w / (float)h, 0, 100);
+	glMatrixMode(GL_MODELVIEW);
 }
 
 // Free Type //////////////////////////////////////////////////////
@@ -274,6 +274,7 @@ vector <MyVector> waiterThreeWaypoints;
 enum CUS_STATE
 {
 	E_CUSTOMER_IDLE,
+	E_CUSTOMER_QUEUE,
 	E_CUSTOMER_MOVE,
 	E_CUSTOMER_ORDER,
 	E_CUSTOMER_EAT,
@@ -285,7 +286,7 @@ const float customerSpeed = 0.015f;
 float eatSpeed = 0.1f;
 bool customerSeated;
 MyVector customerPos;
-
+const MyVector defaultSpawn = MyVector(8.5f, 3.5f);
 
 // Caller related
 enum CALLER_STATE
@@ -301,7 +302,7 @@ const MyVector callerPos = MyVector(6.25f, 3.5f);
 
 #pragma endregion
 
-static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, int mods )
+static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
@@ -317,7 +318,7 @@ static void KeyCallBack( GLFWwindow *window, int key, int scancode, int action, 
 
 void SimulationInit()
 {
-	chefStation = MyVector(0.f, -3.f);
+	chefStation = MyVector(-5.f, -2.5f);
 	srand((unsigned)time(NULL));
 	float seat_offset = 1.25f;
 	float big_seat_offset_diagonal = 2.f;
@@ -398,6 +399,8 @@ void SimulationInit()
 	waiterTwoPos.SetPosition(waiterTwoWaypoints[0].GetX(), waiterTwoWaypoints[0].GetY());
 	waiterThreePos.SetPosition(waiterThreeWaypoints[0].GetX(), waiterThreeWaypoints[0].GetY());
 
+	customerPos.SetPosition(defaultSpawn.x, defaultSpawn.y);
+
 #pragma endregion
 
 
@@ -428,96 +431,108 @@ int main()
 	char *title = "Patrol";
 	width = 1280;
 	height = 720;
-	
-	glfwSetErrorCallback( ErrorCallBack );
-	if ( !glfwInit() )
-		exit( EXIT_FAILURE );
-	glfwWindowHint(GLFW_SAMPLES,4);
-	GLFWwindow* window = glfwCreateWindow( (int) width, (int) height, title, NULL , NULL );
-	
+
+	glfwSetErrorCallback(ErrorCallBack);
+	if (!glfwInit())
+		exit(EXIT_FAILURE);
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	GLFWwindow* window = glfwCreateWindow((int)width, (int)height, title, NULL, NULL);
+
 	if (!window)
 	{
-		fprintf( stderr, "Failed to create GLFW windows.\n" );
+		fprintf(stderr, "Failed to create GLFW windows.\n");
 		glfwTerminate();
-		exit( EXIT_FAILURE );
-	}
-	
-	glfwMakeContextCurrent( window );
-	glfwSetKeyCallback( window, KeyCallBack );
-	glfwSetWindowSizeCallback( window, ResizeCallBack );
-	
-	GLenum error =  glewInit();
-	if ( error != GLEW_OK)
-	{
-		fprintf(stderr,"Error : %s\n", glewGetErrorString( error ) );
-		exit( EXIT_FAILURE );
+		exit(EXIT_FAILURE);
 	}
 
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	gluPerspective( 60, width / height, 0, 100 );
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
-	
-	///////////////////////////////////////////////////////////////////////////
-	
-	// Initialize and load our freetype face
-	if ( FT_Init_FreeType( &ft_lib ) != 0 )
+	glfwMakeContextCurrent(window);
+	glfwSetKeyCallback(window, KeyCallBack);
+	glfwSetWindowSizeCallback(window, ResizeCallBack);
+
+	GLenum error = glewInit();
+	if (error != GLEW_OK)
 	{
-		fprintf( stderr, "Couldn't initialize FreeType library\n" );
-		Cleanup();
-		exit( EXIT_FAILURE );
+		fprintf(stderr, "Error : %s\n", glewGetErrorString(error));
+		exit(EXIT_FAILURE);
 	}
-	
-	if ( FT_New_Face(ft_lib, "arial.ttf", 0, &face ) != 0 )
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(60, width / height, 0, 100);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	///////////////////////////////////////////////////////////////////////////
+
+	// Initialize and load our freetype face
+	if (FT_Init_FreeType(&ft_lib) != 0)
 	{
-		fprintf( stderr, "Unable to load arial.ttf\n" );
+		fprintf(stderr, "Couldn't initialize FreeType library\n");
 		Cleanup();
-		exit( EXIT_FAILURE );
+		exit(EXIT_FAILURE);
+	}
+
+	if (FT_New_Face(ft_lib, "arial.ttf", 0, &face) != 0)
+	{
+		fprintf(stderr, "Unable to load arial.ttf\n");
+		Cleanup();
+		exit(EXIT_FAILURE);
 	}
 	// Initialize our texture and VBOs
-	glGenBuffers( 1, &vbo );
-	glGenVertexArrays( 1, &vao );
-	glGenTextures( 1, &texture );
+	glGenBuffers(1, &vbo);
+	glGenVertexArrays(1, &vao);
+	glGenTextures(1, &texture);
 	glGenSamplers(1, &sampler);
-	glSamplerParameteri( sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glSamplerParameteri( sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-	glSamplerParameteri( sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-	glSamplerParameteri( sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-	
-	// Initialize shader
-	vs = glCreateShader( GL_VERTEX_SHADER );
-	glShaderSource( vs, 1, &VERTEX_SHADER, 0 );
-	glCompileShader( vs );
+	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glSamplerParameteri(sampler, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	fs = glCreateShader( GL_FRAGMENT_SHADER );
-	glShaderSource( fs, 1, &FRAGMENT_SHADER, 0 );
-	glCompileShader( fs );
+	// Initialize shader
+	vs = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vs, 1, &VERTEX_SHADER, 0);
+	glCompileShader(vs);
+
+	fs = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fs, 1, &FRAGMENT_SHADER, 0);
+	glCompileShader(fs);
 
 	program = glCreateProgram();
-	glAttachShader( program, vs );
-	glAttachShader( program, fs );
-	glLinkProgram( program );
-	
+	glAttachShader(program, vs);
+	glAttachShader(program, fs);
+	glLinkProgram(program);
+
 	// Initialize GL state
-	glEnable( GL_BLEND );
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// Get shader uniforms
-	glUseProgram( program );
-	glBindAttribLocation( program, 0, "in_Position" );
-	texUniform = glGetUniformLocation( program, "tex" );
-	colorUniform = glGetUniformLocation( program, "color" );
+	glUseProgram(program);
+	glBindAttribLocation(program, 0, "in_Position");
+	texUniform = glGetUniformLocation(program, "tex");
+	colorUniform = glGetUniformLocation(program, "color");
 
 	SimulationInit();
-	Render( window );
-	DoExit( );
+	Render(window);
+	DoExit();
 }
 
 void RenderObjects()
-{	
+{
 	glPushMatrix();
 	glTranslatef(0.0f, 0.0f, -10.0f);
+
+	/*
+	 *	Color codes:
+	 *
+	 *	- White = waiter
+	 *	- Green = caller
+	 *	- Light blue = customer
+	 *	- Red = chef
+	 */
+
+	 // Background
+	RenderRectangle(-15.f, -15.f, 15.f, 15.f, 0.15f, 0.f, 0.15f);
 
 	// Tables
 	for (unsigned int i = 0; i < tables.size(); i++)
@@ -555,9 +570,9 @@ void RenderObjects()
 	RenderFillCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 3 object
 	RenderCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius + proximity, 0.8f, 0.8f, 0.8f); // Waiter 3 proximity
 
-	//// Customer (temp)
-	//RenderFillCircle(customerPos.GetX(), customerPos.GetY(), AI_radius, 1.f, 1.f, 0.f); // object
-	//RenderCircle(customerPos.GetX(), customerPos.GetY(), playerRadius + proximity, 0.1f, 0.1f, 0.1f); // proximity
+	// Customer (temp)
+	RenderFillCircle(customerPos.GetX(), customerPos.GetY(), AI_radius, 0.f, 0.9f, 1.f); // Customer 1 object
+	RenderCircle(customerPos.GetX(), customerPos.GetY(), AI_radius + proximity, 0.f, 0.9f, 1.f); // Customer 1 proximity
 
 	//// Waypoints
 	//for (unsigned int i = 0; i < wayPoints.size(); i++ )
@@ -581,15 +596,35 @@ void RunFSM()
 		waiterOneState = E_WAITER_PICKUPCUSTOMER;
 	}
 
-	/*if (customerPickup)
+	if (customerPickup)
 	{
-	customerState = E_CUSTOMER_MOVE;
-	}*/
+		customerState = E_CUSTOMER_MOVE;
+	}
 }
 
 void Update()
 {
 #pragma region Waiter Updates
+
+	if (waiterOneState == E_WAITER_IDLE)
+	{
+		MyVector direction = (waiterOnePos - waiterOneSpawn).Normalize();
+		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneSpawn.GetX(), waiterOneSpawn.GetY());
+
+		if (distance < waiterSpeed)
+		{
+			arrived = true;
+		}
+		else
+		{
+			waiterOnePos = waiterOnePos + direction * waiterSpeed;
+		}
+
+		if (arrived)
+		{
+			arrived = false;
+		}
+	}
 
 	if (waiterOneState == E_WAITER_PICKUP)
 	{
@@ -656,8 +691,8 @@ void Update()
 
 	if (waiterOneState == E_WAITER_MOVE)
 	{
-		MyVector direction = (waiterOnePos - waiterOneWaypoints[0]).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
+		MyVector direction = (waiterOnePos - seats[0]).Normalize();
+		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), seats[0].GetX(), seats[0].GetY());
 
 		if (distance < waiterSpeed)
 		{
@@ -670,7 +705,6 @@ void Update()
 
 		if (customerSeated)
 		{
-			waiterOneState = E_WAITER_IDLE;
 			customerSeated = false;
 		}
 	}
@@ -681,8 +715,8 @@ void Update()
 
 	if (customerState == E_CUSTOMER_MOVE)
 	{
-		MyVector direction = (customerPos - waiterOneWaypoints[0]).Normalize();
-		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
+		MyVector direction = (customerPos - seats[0]).Normalize();
+		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), seats[0].GetX(), seats[0].GetY());
 
 		if (distance < customerSpeed)
 		{
@@ -696,6 +730,7 @@ void Update()
 		if (customerSeated)
 		{
 			customerState = E_CUSTOMER_IDLE;
+			waiterOneState = E_WAITER_IDLE;
 			customerSeated = false;
 		}
 	}
@@ -746,43 +781,43 @@ void RenderDebugText()
 
 }
 
-void Render( GLFWwindow* window )
+void Render(GLFWwindow* window)
 {
-	while ( !glfwWindowShouldClose( window) )
+	while (!glfwWindowShouldClose(window))
 	{
-		glUseProgram( 0 );
-		glClear( GL_COLOR_BUFFER_BIT );
+		glUseProgram(0);
+		glClear(GL_COLOR_BUFFER_BIT);
 
 		Update();
 		RunFSM();
-	
+
 		string stateString = "";
 		MyVector direction;
-		switch ( state )
+		switch (state)
 		{
-			case PATROL  :	stateString = "PATROL";
-							break;
-			case CHASE :	stateString = "CHASE";
-							direction = ( playerPos - enemyPos ).Normalize();
-							enemyPos = enemyPos + direction * enemySpeed;
-							playerPos = playerPos + direction  * playerSpeed;
-							break;
+		case PATROL:	stateString = "PATROL";
+			break;
+		case CHASE:	stateString = "CHASE";
+			direction = (playerPos - enemyPos).Normalize();
+			enemyPos = enemyPos + direction * enemySpeed;
+			playerPos = playerPos + direction  * playerSpeed;
+			break;
 		}
-		
-		RenderObjects();
-	
-		// Bind stuff
-		glActiveTexture( GL_TEXTURE0 );
-		glBindTexture( GL_TEXTURE_2D, texture );
-		glBindSampler( 0, sampler);
-		glBindVertexArray( vao );
-		glEnableVertexAttribArray( 0 );
-		glBindBuffer( GL_ARRAY_BUFFER, vbo );
-		glUseProgram( program );
-		glUniform4f( colorUniform, 1, 1, 1, 1 );
-		glUniform1i( texUniform, 0 );
 
-		FT_Set_Pixel_Sizes( face, 0, 50 );
+		RenderObjects();
+
+		// Bind stuff
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindSampler(0, sampler);
+		glBindVertexArray(vao);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glUseProgram(program);
+		glUniform4f(colorUniform, 1, 1, 1, 1);
+		glUniform1i(texUniform, 0);
+
+		FT_Set_Pixel_Sizes(face, 0, 50);
 
 		RenderDebugText();
 
@@ -790,7 +825,7 @@ void Render( GLFWwindow* window )
 		RenderText( stateString , face, -0.8f, 0.925f, 0.55f, 0.55f );
 		RenderText("Player - Blue     Enemy - Green     Red - Patrol Point", face, -0.6f, 0.925f, 0.55f, 0.55f);*/
 
-		glfwSwapBuffers( window );
+		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 }
