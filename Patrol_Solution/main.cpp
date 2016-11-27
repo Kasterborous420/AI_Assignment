@@ -262,7 +262,7 @@ enum WAITER_STATE
 WAITER_STATE waiterOneState;
 WAITER_STATE waiterTwoState;
 WAITER_STATE waiterThreeState;
-const float waiterSpeed = 0.05f;
+const float waiterSpeed = 0.02f;
 MyVector waiterOnePos;
 MyVector waiterTwoPos;
 MyVector waiterThreePos;
@@ -293,7 +293,7 @@ enum CUS_STATE
 	E_CUSTOMER_MAX
 };
 CUS_STATE customerState;
-const float customerSpeed = 0.045f;
+const float customerSpeed = 0.02f;
 const float orderTime = 3.f;
 const float eatTime = 10.f;
 bool customerSeated;
@@ -324,10 +324,10 @@ static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, i
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
-	{
-		foodReady = true;
-	}
+	//if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
+	//{
+	//	foodReady = true;
+	//}
 	if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
 	{
 		customerLine = true;
@@ -888,7 +888,7 @@ void Update()
 			}
 		}
 		//traverse back to spawn point?
-		else
+		else if (ListOfOrders.size() == 0)
 		{
 			MyVector direction = (chefPos - chefSpawn).Normalize();
 			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), chefSpawn.GetX(), chefSpawn.GetY());
