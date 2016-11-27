@@ -623,6 +623,8 @@ void RunFSM()
 	if (foodReady && chefArrived == true)
 	{
 		waiterOneState = E_WAITER_SERVE;
+		foodReady = false;
+		chefArrived = false;
 	}
 
 	if (availableCustomers)
@@ -701,7 +703,6 @@ void Update()
 		{
 			waiterOnePos = waiterOnePos + direction * waiterSpeed;
 		}
-
 		if (arrived)
 		{
 			waiterOneState = E_WAITER_IDLE;
@@ -732,7 +733,7 @@ void Update()
 		}
 	}
 
-	if (waiterOneState == E_WAITER_MOVE)
+	/*if (waiterOneState == E_WAITER_MOVE)
 	{
 		MyVector direction = (waiterOnePos - seats[0]).Normalize();
 		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), seats[0].GetX(), seats[0].GetY());
@@ -750,7 +751,7 @@ void Update()
 		{
 			customerSeated = false;
 		}
-	}
+	}*/
 
 #pragma endregion
 
@@ -812,7 +813,17 @@ void Update()
 		//traverse back to spawn point?
 		else
 		{
+			MyVector direction = (chefPos - chefSpawn).Normalize();
+			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), chefSpawn.GetX(), chefSpawn.GetY());
 
+			if (distance < chefSpeed)
+			{
+				isAtStation = true;
+			}
+			else
+			{
+				chefPos = chefPos + direction * chefSpeed;
+			}
 		}
 
 	}
@@ -938,8 +949,8 @@ void RenderDebugText()
 	}
 	}
 
-	// Waiter 2 Debug Text
-	RenderText("WaiterState: ", face, waiterTwoPos.GetX(), waiterTwoPos.GetY() + 1.f, 0.55f, 0.55f);
+	// Miscell debug text
+
 
 
 }
