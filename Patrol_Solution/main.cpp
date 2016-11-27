@@ -259,7 +259,7 @@ enum WAITER_STATE
 WAITER_STATE waiterOneState;
 WAITER_STATE waiterTwoState;
 WAITER_STATE waiterThreeState;
-const float waiterSpeed = 0.02f;
+const float waiterSpeed = 0.05f;
 MyVector waiterOnePos;
 MyVector waiterTwoPos;
 MyVector waiterThreePos;
@@ -291,7 +291,7 @@ enum CUS_STATE
 	E_CUSTOMER_MAX
 };
 CUS_STATE customerState;
-const float customerSpeed = 0.015f;
+const float customerSpeed = 0.045f;
 float eatSpeed = 0.1f;
 bool customerSeated;
 MyVector customerPos;
