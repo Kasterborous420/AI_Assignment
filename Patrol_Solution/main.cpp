@@ -861,7 +861,7 @@ void Update()
 						chefPos = chefPos + direction * chefSpeed;
 					}
 
-					if (isAtStation)
+					if (waiterOneState == E_WAITER_SERVE)
 					{
 						chefState = E_CHEF_WAIT;
 						chefArrived = false;
@@ -882,7 +882,7 @@ void Update()
 					chefPos = chefPos + direction * chefSpeed;
 				}
 
-				if (isAtStation)
+				if (waiterOneState == E_WAITER_SERVE)
 				{
 					chefState = E_CHEF_WAIT;
 					chefArrived = false;
@@ -903,7 +903,7 @@ void Update()
 				chefPos = chefPos + direction * chefSpeed;
 			}
 
-			if (isAtStation)
+			if (waiterOneState == E_WAITER_SERVE)
 			{
 				chefState = E_CHEF_WAIT;
 				chefArrived = false;
@@ -946,6 +946,28 @@ void RenderDebugText()
 	{
 		RenderText("SERVE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
+	}
+	}
+
+	//Chef Debug Text
+	RenderText("Chef State: ", face, -0.95f, 0.825f, 0.55f, 0.55f);
+
+	switch (chefState)
+	{
+	case E_CHEF_WAIT:
+	{
+						RenderText("Chef_Wait", face, -0.75f, 0.825f, 0.55f, 0.55f);
+						break;
+	}
+	case E_CHEF_COOK:
+	{
+						RenderText("Chef_Cook", face, -0.75f, 0.825f, 0.55f, 0.55f);
+						break;
+	}
+	case E_CHEF_SERVE:
+	{
+						 RenderText("Chef_Serve", face, -0.75f, 0.825f, 0.55f, 0.55f);
+						break;
 	}
 	}
 
