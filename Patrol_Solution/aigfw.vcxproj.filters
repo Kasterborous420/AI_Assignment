@@ -21,12 +21,18 @@
     <ClCompile Include="DiningTable.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Waiter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DiningTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MyVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Waiter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
