@@ -13,6 +13,8 @@
 #include <ft2build.h>
 #include "DiningTable.h"
 #include "Waiter.h"
+#include "MessageBoard.h"
+
 
 #include FT_FREETYPE_H
 using namespace std;
@@ -221,6 +223,9 @@ const float waypoint_radius = 0.35f;
 const float proximity = 0.2f;
 
 bool autorun = false;
+
+// Message board
+MessageBoard messageBoard;
 
 #pragma region AI_STATES
 // Chef related
@@ -707,6 +712,8 @@ void Update()
 			customerState = E_CUSTOMER_MOVE;
 			waiter->SetCustomerPickup(false);
 			waiter->SetAvailableCustomers(false);
+
+			messageBoard.Reset();
 		}
 	}
 
@@ -750,6 +757,10 @@ void Update()
 
 		if (customerInLine)
 		{
+			messageBoard.setLabel_From("Caller");
+			messageBoard.setLabel_To("Waiter");
+			messageBoard.setMessage("CUSTOMERS HERE!");
+
 			customerState = E_CUSTOMER_IDLE;
 			customerLine = false;
 			customerInLine = false;
@@ -1053,6 +1064,8 @@ void RenderDebugText()
 	}
 	}
 
+	
+
 }
 
 void Render(GLFWwindow* window)
@@ -1065,7 +1078,6 @@ void Render(GLFWwindow* window)
 		Update();
 		RunFSM();
 
-		string stateString = "";
 		MyVector direction;
 
 		/*switch ( state )
@@ -1078,6 +1090,8 @@ void Render(GLFWwindow* window)
 							playerPos = playerPos + direction  * playerSpeed;
 							break;
 		}*/
+
+		
 
 		RenderObjects();
 
@@ -1095,6 +1109,16 @@ void Render(GLFWwindow* window)
 		FT_Set_Pixel_Sizes(face, 0, 50);
 
 		RenderDebugText();
+
+		string stateString = "";
+		stateString = "Message Board : " + messageBoard.getMessage();
+		RenderText(stateString, face, 0.5f, -0.525f, 0.5f, 0.5f);
+
+		stateString = "From : " + messageBoard.getLabel_From();
+		RenderText(stateString, face, 0.5f, -0.625f, 0.5f, 0.5f);
+
+		stateString = "To: " + messageBoard.getLabel_To();
+		RenderText(stateString, face, 0.5f, -0.725f, 0.5f, 0.5f);
 
 		/*RenderText("State : ", face, -0.95f, 0.925f, 0.55f, 0.55f);
 		RenderText( stateString , face, -0.8f, 0.925f, 0.55f, 0.55f );
