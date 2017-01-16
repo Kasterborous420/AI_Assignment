@@ -12,6 +12,7 @@
 #include <GLFw/glfw3.h>
 #include <ft2build.h>
 #include "DiningTable.h"
+#include "MessageBoard.h"
 
 #include FT_FREETYPE_H
 using namespace std;
@@ -220,6 +221,9 @@ const float waypoint_radius = 0.35f;
 const float proximity = 0.2f;
 
 bool autorun = false;
+
+// Message board
+MessageBoard messageBoard;
 
 #pragma region AI_STATES
 // Chef related
