@@ -12,17 +12,17 @@ MessageBoard::~MessageBoard()
 
 void MessageBoard::setMessage(string msg)
 {
-	msg = message;
+	message = msg;
 }
 
 void MessageBoard::setLabel_From(string from)
 {
-	from = from_label;
+	from_label = from;
 }
 
 void MessageBoard::setLabel_To(string to)
 {
-	to = to_label;
+	to_label = to;
 }
 
 string MessageBoard::getMessage()
@@ -42,4 +42,5 @@ string MessageBoard::getLabel_To()
 
 void MessageBoard::Reset()
 {
+	message = from_label = to_label = "Nil";
 }
