@@ -2,8 +2,11 @@
 #include "MyVector.h"
 #include <vector>
 using std::vector;
+
 class CWaiter
 {
+public: 
+
 	// Waiter related
 	enum WAITER_STATE
 	{
@@ -14,7 +17,9 @@ class CWaiter
 		E_WAITER_MOVE,
 		E_WAITER_MAX
 	};
+
 private:
+
 	WAITER_STATE waiterState;
 	MyVector waiterPos;
 	MyVector waiterSpawn;

@@ -12,6 +12,7 @@
 #include <GLFw/glfw3.h>
 #include <ft2build.h>
 #include "DiningTable.h"
+#include "Waiter.h"
 
 #include FT_FREETYPE_H
 using namespace std;
@@ -250,36 +251,9 @@ MyVector cookingStation_1 = MyVector(-5.f, -2.5f);
 // bool isCooking_1 = false;
 
 // Waiter related
-enum WAITER_STATE
-{
-	E_WAITER_SERVE,
-	E_WAITER_IDLE,
-	E_WAITER_PICKUP,
-	E_WAITER_PICKUPCUSTOMER,
-	E_WAITER_MOVE,
-	E_WAITER_MAX
-};
-WAITER_STATE waiterOneState;
-WAITER_STATE waiterTwoState;
-WAITER_STATE waiterThreeState;
-const float waiterSpeed = 0.02f;
-MyVector waiterOnePos;
-MyVector waiterTwoPos;
-MyVector waiterThreePos;
-bool foodReady;
-bool availableCustomers;
-bool customerPickup;
-MyVector waiterOneSpawn = MyVector(-9.f, 0.5f);
-MyVector waiterTwoSpawn = MyVector(-7.5f, 0.5f);
-MyVector waiterThreeSpawn = MyVector(-6.f, 0.5f);
-bool waiter1_isBusy;
-bool waiter2_isBusy;
-bool waiter3_isBusy;
-vector <MyVector> waiterOneWaypoints;
-vector <MyVector> waiterTwoWaypoints;
-vector <MyVector> waiterThreeWaypoints;
+CWaiter *waiter = new CWaiter();
 
-unsigned int tableNumber = 0;
+unsigned int tableNumber;
 
 // Customer related
 enum CUS_STATE
@@ -336,6 +310,8 @@ static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, i
 
 void SimulationInit()
 {
+	waiter->SetSpawn(MyVector(-9.f, 0.5f));
+
 	chefStation = MyVector(-5.f, -2.5f);
 	srand((unsigned)time(NULL));
 	float seat_offset = 1.25f;
@@ -405,20 +381,12 @@ void SimulationInit()
 #pragma region AI Waypoints
 
 	// Waiter 1 Waypoints
-	waiterOneWaypoints.push_back(MyVector(waiterOneSpawn.GetX(), waiterOneSpawn.GetY()));
-	waiterOneWaypoints.push_back(table_1->GetPos());
-	waiterOneWaypoints.push_back(table_2->GetPos());
-	waiterOneWaypoints.push_back(table_3->GetPos());
+	waiter->waiterWayPoints.push_back(MyVector(waiter->GetSpawn().GetX(), waiter->GetSpawn().GetY()));
+	waiter->waiterWayPoints.push_back(table_1->GetPos());
+	waiter->waiterWayPoints.push_back(table_2->GetPos());
+	waiter->waiterWayPoints.push_back(table_3->GetPos());
 
-	// Waiter 2 Waypoints
-	waiterTwoWaypoints.push_back(MyVector(waiterTwoSpawn.GetX(), waiterTwoSpawn.GetY()));
-
-	// Waiter 3 Waypoints
-	waiterThreeWaypoints.push_back(MyVector(waiterThreeSpawn.GetX(), waiterThreeSpawn.GetY()));
-
-	waiterOnePos.SetPosition(waiterOneWaypoints[0].GetX(), waiterOneWaypoints[0].GetY());
-	waiterTwoPos.SetPosition(waiterTwoWaypoints[0].GetX(), waiterTwoWaypoints[0].GetY());
-	waiterThreePos.SetPosition(waiterThreeWaypoints[0].GetX(), waiterThreeWaypoints[0].GetY());
+	waiter->SetPos(waiter->waiterWayPoints[0]);
 
 	customerPos.SetPosition(defaultSpawn.x, defaultSpawn.y);
 
@@ -432,25 +400,25 @@ void SimulationInit()
 	//TEST ORDER
 
 	// Set AI States
-	waiterOneState = E_WAITER_IDLE;
+	waiter->SetState(CWaiter::WAITER_STATE::E_WAITER_IDLE);
 	customerState = E_CUSTOMER_IDLE;
 	chefState = E_CHEF_WAIT;
 
 
 	//Set AI Conditions
-	foodReady = false;
+	// Set Waiter 1 conditions
+	waiter->SetFoodReady(false);
+	waiter->SetAvailableCustomers(false);
+	waiter->SetCustomerPickup(false);
+	waiter->SetBusy(false);
+
+
 	arrived = false;
-	availableCustomers = false;
 	customerSeated = false;
 	customerLine = false;
 	customerInLine = false;
-	customerPickup = false;
 	backToSpawn = false;
 	isAtStation = false;
-
-	waiter1_isBusy = false;
-	waiter2_isBusy = false;
-	waiter3_isBusy = false;
 	chefArrived = false;
 }
 
@@ -594,13 +562,13 @@ void RenderObjects()
 	RenderFillCircle(cookingStation_1.GetX(), cookingStation_1.GetY(), 0.4f, 1.f, 0.5f, 0.5f);
 
 	// Waiter 1
-	RenderFillCircle(waiterOnePos.GetX(), waiterOnePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 1 object
+	RenderFillCircle(waiter->GetPos().GetX(), waiter->GetPos().GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 1 object
 
-	// Waiter 2
-	RenderFillCircle(waiterTwoPos.GetX(), waiterTwoPos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 2 object
+	//// Waiter 2
+	//RenderFillCircle(waiterTwoPos.GetX(), waiterTwoPos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 2 object
 
-	// Waiter 3
-	RenderFillCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 3 object
+	//// Waiter 3
+	//RenderFillCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 3 object
 
 	// Customer (temp)
 	RenderFillCircle(customerPos.GetX(), customerPos.GetY(), AI_radius, 0.f, 0.9f, 1.f); // Customer 1 object
@@ -622,19 +590,19 @@ void RenderObjects()
 
 void RunFSM()
 {
-	if (foodReady && chefArrived == true)
+	if (waiter->GetFoodReady() && chefArrived == true)
 	{
-		waiterOneState = E_WAITER_SERVE;
-		foodReady = false;
+		waiter->SetState(CWaiter::E_WAITER_SERVE);
+		waiter->SetFoodReady(false);
 		chefArrived = false;
 	}
 
-	if (availableCustomers)
+	if (waiter->GetAvailableCustomers())
 	{
-		waiterOneState = E_WAITER_PICKUPCUSTOMER;
+		waiter->SetState(CWaiter::E_WAITER_PICKUPCUSTOMER);
 	}
 
-	if (customerPickup)
+	if (waiter->GetCustomerPickup())
 	{
 		customerState = E_CUSTOMER_MOVE;
 	}
@@ -649,18 +617,18 @@ void Update()
 {
 #pragma region Waiter Updates
 
-	if (waiterOneState == E_WAITER_IDLE)
+	if (waiter->GetState() == CWaiter::E_WAITER_IDLE)
 	{
-		MyVector direction = (waiterOnePos - waiterOneSpawn).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneSpawn.GetX(), waiterOneSpawn.GetY());
+		MyVector direction = (waiter->GetPos() - waiter->GetSpawn()).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), waiter->GetSpawn().GetX(), waiter->GetSpawn().GetY());
 
-		if (distance < waiterSpeed)
+		if (distance < waiter->GetSpeed())
 		{
 			arrived = true;
 		}
 		else
 		{
-			waiterOnePos = waiterOnePos + direction * waiterSpeed;
+			waiter->SetPos(waiter->GetPos() + direction * waiter->GetSpeed());
 		}
 
 		if (arrived)
@@ -669,27 +637,27 @@ void Update()
 		}
 	}
 
-	if (waiterOneState == E_WAITER_PICKUP)
+	if (waiter->GetState() == CWaiter::E_WAITER_PICKUP)
 	{
-		MyVector direction = (waiterOnePos - chefStation).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), chefStation.GetX(), chefStation.GetY());
-		if (distance < waiterSpeed)
+		MyVector direction = (waiter->GetPos() - chefStation).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), chefStation.GetX(), chefStation.GetY());
+		if (distance < waiter->GetSpeed())
 		{
 			arrived = true;
 		}
 		else
 		{
-			waiterOnePos = waiterOnePos + direction * waiterSpeed;
+			waiter->SetPos(waiter->GetPos() + direction * waiter->GetSpeed());
 		}
 
 		if (arrived)
 		{
-			waiterOneState = E_WAITER_SERVE;
+			waiter->SetState(CWaiter::E_WAITER_SERVE);
 			arrived = false;
-			foodReady = false;
+			waiter->SetFoodReady(false);
 		}
 	}
-	if (waiterOneState == E_WAITER_SERVE)
+	if (waiter->GetState() == CWaiter::E_WAITER_SERVE)
 	{
 		// Find a table to serve
 		if (ListOfOrders.size() > 0)
@@ -700,60 +668,60 @@ void Update()
 			ListOfOrders.erase(ListOfOrders.begin());
 		}
 
-		MyVector direction = (waiterOnePos - waiterOneWaypoints[tableNumber]).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneWaypoints[tableNumber].GetX(), waiterOneWaypoints[tableNumber].GetY());
-		if (distance < waiterSpeed)
+		MyVector direction = (waiter->GetPos() - waiter->waiterWayPoints[tableNumber]).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), waiter->waiterWayPoints[tableNumber].GetX(), waiter->waiterWayPoints[tableNumber].GetY());
+		if (distance < waiter->GetSpeed())
 		{
 			arrived = true;
 		}
 		else
 		{
-			waiterOnePos = waiterOnePos + direction * waiterSpeed;
+			waiter->SetPos(waiter->GetPos() + direction * waiter->GetSpeed());
 		}
 		if (arrived)
 		{
-			waiterOneState = E_WAITER_IDLE;
+			waiter->SetState(CWaiter::E_WAITER_IDLE);
 			customerState = E_CUSTOMER_EAT;
 			arrived = false;
 			eatStart = clock();
 		}
 
 	}
-	if (waiterOneState == E_WAITER_PICKUPCUSTOMER)
+	if (waiter->GetState() == CWaiter::E_WAITER_PICKUPCUSTOMER)
 	{
-		MyVector direction = (waiterOnePos - customerPos).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), customerPos.GetX(), customerPos.GetY());
+		MyVector direction = (waiter->GetPos() - customerPos).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), customerPos.GetX(), customerPos.GetY());
 
-		if (distance < waiterSpeed)
+		if (distance < waiter->GetSpeed())
 		{
-			customerPickup = true;
+			waiter->SetCustomerPickup(true);
 		}
 		else
 		{
-			waiterOnePos = waiterOnePos + direction * waiterSpeed;
+			waiter->SetPos(waiter->GetPos() + direction * waiter->GetSpeed());
 		}
 
-		if (customerPickup)
+		if (waiter->GetCustomerPickup())
 		{
-			waiterOneState = E_WAITER_MOVE;
+			waiter->SetState(CWaiter::E_WAITER_MOVE);
 			customerState = E_CUSTOMER_MOVE;
-			customerPickup = false;
-			availableCustomers = false;
+			waiter->SetCustomerPickup(false);
+			waiter->SetAvailableCustomers(false);
 		}
 	}
 
-	if (waiterOneState == E_WAITER_MOVE)
+	if (waiter->GetState() == CWaiter::E_WAITER_MOVE)
 	{
-		MyVector direction = (waiterOnePos - waiterOneWaypoints[1]).Normalize();
-		float distance = GetDistance(waiterOnePos.GetX(), waiterOnePos.GetY(), waiterOneWaypoints[1].GetX(), waiterOneWaypoints[1].GetY());
+		MyVector direction = (waiter->GetPos() - waiter->waiterWayPoints[1]).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), waiter->waiterWayPoints[1].GetX(), waiter->waiterWayPoints[1].GetY());
 
-		if (distance < waiterSpeed)
+		if (distance < waiter->GetSpeed())
 		{
 			customerSeated = true;
 		}
 		else
 		{
-			waiterOnePos = waiterOnePos + direction * waiterSpeed;
+			waiter->SetPos(waiter->GetPos() + direction * waiter->GetSpeed());
 		}
 
 		if (customerSeated)
@@ -785,7 +753,7 @@ void Update()
 			customerState = E_CUSTOMER_IDLE;
 			customerLine = false;
 			customerInLine = false;
-			availableCustomers = true;
+			waiter->SetAvailableCustomers(true);
 		}
 	}
 
@@ -806,7 +774,7 @@ void Update()
 		if (customerSeated)
 		{
 			customerState = E_CUSTOMER_ORDER;
-			waiterOneState = E_WAITER_IDLE;
+			waiter->SetState(CWaiter::E_WAITER_IDLE);
 			customerSeated = false;
 			orderStart = clock();
 		}
@@ -913,16 +881,16 @@ void Update()
 		// If elasped time is more than 5 seconds
 		if (((float)(t2 - t1) / CLOCKS_PER_SEC) >= 5.f)
 		{
-			foodReady = true;
+			waiter->SetFoodReady(true);
 			chefState = E_CHEF_SERVE;
 		}
 	}
 
 	if (chefState == E_CHEF_SERVE)
 	{
-		if (waiter1_isBusy)
+		if (waiter->GetBusy())
 		{
-			if (waiter2_isBusy)
+			/*if (waiter2_isBusy)
 			{
 				if (!waiter3_isBusy)
 				{
@@ -964,12 +932,12 @@ void Update()
 					chefState = E_CHEF_WAIT;
 					chefArrived = false;
 				}
-			}
+			}*/
 		}
-		else if (!waiter1_isBusy)
+		else if (!waiter->GetBusy())
 		{
-			MyVector direction = (chefPos - waiterOneSpawn).Normalize();
-			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiterOneSpawn.GetX(), waiterOneSpawn.GetY());
+			MyVector direction = (chefPos - waiter->GetSpawn()).Normalize();
+			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiter->GetSpawn().GetX(), waiter->GetSpawn().GetY());
 
 			if (distance < chefSpeed)
 			{
@@ -980,7 +948,7 @@ void Update()
 				chefPos = chefPos + direction * chefSpeed;
 			}
 
-			if (waiterOneState == E_WAITER_SERVE)
+			if (waiter->GetState() == CWaiter::E_WAITER_SERVE)
 			{
 				chefState = E_CHEF_WAIT;
 				chefArrived = false;
@@ -997,29 +965,29 @@ void RenderDebugText()
 
 	RenderText("WaiterState: ", face, -0.95f, 0.925f, 0.55f, 0.55f);
 
-	switch (waiterOneState)
+	switch (waiter->GetState())
 	{
-	case E_WAITER_IDLE:
+	case CWaiter::E_WAITER_IDLE:
 	{
 		RenderText("IDLE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_WAITER_MOVE:
+	case CWaiter::E_WAITER_MOVE:
 	{
 		RenderText("MOVE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_WAITER_PICKUP:
+	case CWaiter::E_WAITER_PICKUP:
 	{
 		RenderText("PICKUP_FOOD", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_WAITER_PICKUPCUSTOMER:
+	case CWaiter::E_WAITER_PICKUPCUSTOMER:
 	{
 		RenderText("PICKUP_CUSTOMER", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_WAITER_SERVE:
+	case CWaiter::E_WAITER_SERVE:
 	{
 		RenderText("SERVE", face, -0.75f, 0.925f, 0.55f, 0.55f);
 		break;
