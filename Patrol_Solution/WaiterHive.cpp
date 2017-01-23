@@ -1,5 +1,6 @@
 #include "WaiterHive.h"
 
+CWaiterHive *CWaiterHive::instance;
 
 CWaiterHive::CWaiterHive()
 {
@@ -27,7 +28,8 @@ CWaiter CWaiterHive::GetWaiter()
 		// Create waiter
 		CWaiter waiter;
 		// Assign first available waiter 
-		waiter = FreeWaiters[0];
+
+		waiter = *(FreeWaiters.begin());
 		// Remove that fucker from the list cuz he not free
 		FreeWaiters.erase(FreeWaiters.begin());
 		return waiter;

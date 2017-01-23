@@ -27,7 +27,7 @@ private:
 	bool availableCustomers;
 	bool customerPickup;
 	bool isBusy;
-	const float waiterSpeed = 0.02f;
+	float waiterSpeed = 0.02f;
 
 
 public:

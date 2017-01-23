@@ -10,6 +10,7 @@ class CWaiterHive
 private:
 	static CWaiterHive *instance;
 	vector<CWaiter>Roster;
+	vector<CWaiter>::iterator iter;
 
 public:
 	CWaiterHive();
