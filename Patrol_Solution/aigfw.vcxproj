@@ -87,11 +87,13 @@
     <ClCompile Include="DiningTable.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Waiter.cpp" />
+    <ClCompile Include="WaiterHive.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DiningTable.h" />
     <ClInclude Include="MyVector.h" />
     <ClInclude Include="Waiter.h" />
+    <ClInclude Include="WaiterHive.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
