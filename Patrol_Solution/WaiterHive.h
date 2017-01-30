@@ -18,7 +18,6 @@ public:
 
 #pragma region Variables and Shit
 	// Vector of waiters
-	vector<CWaiter>FreeWaiters;
 
 #pragma endregion
 
@@ -29,7 +28,6 @@ public:
 
 	CWaiter GetWaiter();
 	void AddWaiter(CWaiter waiter);
-	void FreeUp(CWaiter waiter);
 
 #pragma endregion
 };
