@@ -25,7 +25,7 @@ CWaiter CWaiterHive::GetWaiter()
 {
 	for (iter = Roster.begin(); iter != Roster.end(); iter++)
 	{
-		if (!(iter->GetBusy))
+		if (!(iter->GetBusy()))
 		{
 			return *iter;
 		}

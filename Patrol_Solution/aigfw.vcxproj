@@ -89,14 +89,17 @@
     <ClCompile Include="Customer.cpp" />
     <ClCompile Include="DiningTable.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MessageBoard.cpp" />
     <ClCompile Include="Waiter.cpp" />
     <ClCompile Include="WaiterHive.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Caller.h" />
+
     <ClInclude Include="Chef.h" />
-    <ClInclude Include="Customer.h" />
+
     <ClInclude Include="DiningTable.h" />
+    <ClInclude Include="MessageBoard.h" />
     <ClInclude Include="MyVector.h" />
     <ClInclude Include="Waiter.h" />
     <ClInclude Include="WaiterHive.h" />
