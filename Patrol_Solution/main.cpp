@@ -13,6 +13,7 @@
 #include <ft2build.h>
 #include "DiningTable.h"
 #include "Waiter.h"
+#include "Customer.h"
 #include "MessageBoard.h"
 
 
@@ -261,29 +262,7 @@ CWaiter *waiter = new CWaiter();
 unsigned int tableNumber;
 
 // Customer related
-enum CUS_STATE
-{
-	E_CUSTOMER_IDLE,
-	E_CUSTOMER_QUEUE,
-	E_CUSTOMER_MOVE,
-	E_CUSTOMER_ORDER,
-	E_CUSTOMER_EAT,
-	E_CUSTOMER_LEAVE,
-	E_CUSTOMER_MAX
-};
-CUS_STATE customerState;
-const float customerSpeed = 0.02f;
-const float orderTime = 3.f;
-const float eatTime = 10.f;
-bool customerSeated;
-bool customerLine;
-bool customerInLine;
-bool backToSpawn;
-MyVector customerPos;
-const MyVector defaultSpawn = MyVector(12.f, 0.f);
-const MyVector defaultLine = MyVector(8.5f, 3.5f);
-clock_t orderStart, orderEnd, eatStart, eatEnd;
-float prob = 30.f;
+Customer *customer = new Customer();
 
 // Caller related
 enum CALLER_STATE
@@ -309,7 +288,7 @@ static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, i
 	//}
 	if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
 	{
-		customerLine = true;
+		customer->SetLine(true);
 	}
 }
 
@@ -393,7 +372,7 @@ void SimulationInit()
 
 	waiter->SetPos(waiter->waiterWayPoints[0]);
 
-	customerPos.SetPosition(defaultSpawn.x, defaultSpawn.y);
+	customer->SetPos(customer->GetSpawnLocation());
 
 	//Set Chef Position
 	chefPos = MyVector(-6.5f, -2.5f);
@@ -406,7 +385,7 @@ void SimulationInit()
 
 	// Set AI States
 	waiter->SetState(CWaiter::WAITER_STATE::E_WAITER_IDLE);
-	customerState = E_CUSTOMER_IDLE;
+	customer->SetState(Customer::CUS_STATE::E_CUSTOMER_IDLE);
 	chefState = E_CHEF_WAIT;
 
 
@@ -417,12 +396,13 @@ void SimulationInit()
 	waiter->SetCustomerPickup(false);
 	waiter->SetBusy(false);
 
+	// Customer
+	customer->SetSeated(false);
+	customer->SetLine(false);
+	customer->SetInLine(false);
+	customer->SetBackSpawn(false);
 
 	arrived = false;
-	customerSeated = false;
-	customerLine = false;
-	customerInLine = false;
-	backToSpawn = false;
 	isAtStation = false;
 	chefArrived = false;
 }
@@ -576,7 +556,7 @@ void RenderObjects()
 	//RenderFillCircle(waiterThreePos.GetX(), waiterThreePos.GetY(), AI_radius, 0.8f, 0.8f, 0.8f); // Waiter 3 object
 
 	// Customer (temp)
-	RenderFillCircle(customerPos.GetX(), customerPos.GetY(), AI_radius, 0.f, 0.9f, 1.f); // Customer 1 object
+	RenderFillCircle(customer->GetPos().x, customer->GetPos().y, AI_radius, 0.f, 0.9f, 1.f); // Customer 1 object
 
 
 	// Chef
@@ -609,12 +589,12 @@ void RunFSM()
 
 	if (waiter->GetCustomerPickup())
 	{
-		customerState = E_CUSTOMER_MOVE;
+		customer->SetState(Customer::E_CUSTOMER_MOVE);
 	}
 
-	if (customerLine)
+	if (customer->GetLine())
 	{
-		customerState = E_CUSTOMER_QUEUE;
+		customer->SetState(Customer::E_CUSTOMER_QUEUE);
 	}
 }
 
@@ -686,16 +666,16 @@ void Update()
 		if (arrived)
 		{
 			waiter->SetState(CWaiter::E_WAITER_IDLE);
-			customerState = E_CUSTOMER_EAT;
+			customer->SetState(Customer::E_CUSTOMER_EAT);
 			arrived = false;
-			eatStart = clock();
+			customer->eatStart = clock();
 		}
 
 	}
 	if (waiter->GetState() == CWaiter::E_WAITER_PICKUPCUSTOMER)
 	{
-		MyVector direction = (waiter->GetPos() - customerPos).Normalize();
-		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), customerPos.GetX(), customerPos.GetY());
+		MyVector direction = (waiter->GetPos() - customer->GetPos()).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), customer->GetPos().GetX(), customer->GetPos().GetY());
 
 		if (distance < waiter->GetSpeed())
 		{
@@ -709,7 +689,7 @@ void Update()
 		if (waiter->GetCustomerPickup())
 		{
 			waiter->SetState(CWaiter::E_WAITER_MOVE);
-			customerState = E_CUSTOMER_MOVE;
+			customer->SetState(Customer::E_CUSTOMER_MOVE);
 			waiter->SetCustomerPickup(false);
 			waiter->SetAvailableCustomers(false);
 
@@ -724,16 +704,16 @@ void Update()
 
 		if (distance < waiter->GetSpeed())
 		{
-			customerSeated = true;
+			customer->SetSeated(true);
 		}
 		else
 		{
 			waiter->SetPos(waiter->GetPos() + direction * waiter->GetSpeed());
 		}
 
-		if (customerSeated)
+		if (customer->GetSeated())
 		{
-			customerSeated = false;
+			customer->SetSeated(false);
 		}
 	}
 
@@ -741,96 +721,96 @@ void Update()
 
 #pragma region Customer Updates
 
-	if (customerState == E_CUSTOMER_QUEUE)
+	if (customer->GetState() == Customer::E_CUSTOMER_QUEUE)
 	{
-		MyVector direction = (customerPos - defaultLine).Normalize();
-		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), defaultLine.x, defaultLine.y);
+		MyVector direction = (customer->GetPos() - customer->GetLineLocation()).Normalize();
+		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), customer->GetLineLocation().GetX(), customer->GetLineLocation().GetY());
 
-		if (distance < customerSpeed)
+		if (distance < customer->GetSpeed())
 		{
-			customerInLine = true;
+			customer->SetInLine(true);
 		}
 		else
 		{
-			customerPos = customerPos + direction * customerSpeed;
+			customer->GetPos() = customer->GetPos() + direction * customer->GetSpeed();
 		}
 
-		if (customerInLine)
+		if (customer->GetInLine())
 		{
 			messageBoard.setLabel_From("Caller");
 			messageBoard.setLabel_To("Waiter");
 			messageBoard.setMessage("CUSTOMERS HERE!");
 
-			customerState = E_CUSTOMER_IDLE;
-			customerLine = false;
-			customerInLine = false;
+			customer->SetState(Customer::E_CUSTOMER_IDLE);
+			customer->SetLine(false);
+			customer->SetInLine(false);
 			waiter->SetAvailableCustomers(true);
 		}
 	}
 
-	if (customerState == E_CUSTOMER_MOVE)
+	if (customer->GetState() == Customer::E_CUSTOMER_MOVE)
 	{
-		MyVector direction = (customerPos - seats[0]).Normalize();
-		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), seats[0].GetX(), seats[0].GetY());
+		MyVector direction = (customer->GetPos() - seats[0]).Normalize();
+		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), seats[0].GetX(), seats[0].GetY());
 
-		if (distance < customerSpeed)
+		if (distance < customer->GetSpeed())
 		{
-			customerSeated = true;
+			customer->SetSeated(true);
 		}
 		else
 		{
-			customerPos = customerPos + direction * customerSpeed;
+			customer->GetPos() = customer->GetPos() + direction * customer->GetSpeed();
 		}
 
-		if (customerSeated)
+		if (customer->GetSeated())
 		{
-			customerState = E_CUSTOMER_ORDER;
+			customer->SetState(Customer::E_CUSTOMER_ORDER);
 			waiter->SetState(CWaiter::E_WAITER_IDLE);
-			customerSeated = false;
-			orderStart = clock();
+			customer->SetSeated(false);
+			customer->orderStart = clock();
 		}
 	}
 
-	if (customerState == E_CUSTOMER_ORDER)
+	if (customer->GetState() == Customer::E_CUSTOMER_ORDER)
 	{
 		//Add an order from table 1
-		orderEnd = clock();
+		customer->orderEnd = clock();
 
-		if (((float)(orderEnd - orderStart) / CLOCKS_PER_SEC) >= orderTime)
+		if (((float)(customer->orderEnd - customer->orderStart) / CLOCKS_PER_SEC) >= customer->GetOrderTime())
 		{
 			ListOfOrders.push_back(1);
-			customerState = E_CUSTOMER_IDLE;
+			customer->SetState(Customer::E_CUSTOMER_IDLE);
 		}
 	}
 
-	if (customerState == E_CUSTOMER_EAT)
+	if (customer->GetState() == Customer::E_CUSTOMER_EAT)
 	{
-		eatEnd = clock();
+		customer->eatEnd = clock();
 
-		if (((float)(eatEnd - eatStart) / CLOCKS_PER_SEC) >= eatTime)
+		if (((float)(customer->eatEnd - customer->eatStart) / CLOCKS_PER_SEC) >= customer->GetEatTime())
 		{
-			customerState = E_CUSTOMER_LEAVE;
+			customer->SetState(Customer::E_CUSTOMER_LEAVE);
 		}
 	}
 
-	if (customerState == E_CUSTOMER_LEAVE)
+	if (customer->GetState() == Customer::E_CUSTOMER_LEAVE)
 	{
-		MyVector direction = (customerPos - defaultSpawn).Normalize();
-		float distance = GetDistance(customerPos.GetX(), customerPos.GetY(), defaultSpawn.x, defaultSpawn.y);
+		MyVector direction = (customer->GetPos() - customer->GetSpawnLocation()).Normalize();
+		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), customer->GetSpawnLocation().x, customer->GetSpawnLocation().y);
 
-		if (distance < customerSpeed)
+		if (distance < customer->GetSpeed())
 		{
-			backToSpawn = true;
+			customer->SetBackSpawn(true);
 		}
 		else
 		{
-			customerPos = customerPos + direction * customerSpeed;
+			customer->GetPos() = customer->GetPos() + direction * customer->GetSpeed();
 		}
 
-		if (backToSpawn)
+		if (customer->GetBackSpawn())
 		{
-			customerState = E_CUSTOMER_IDLE;
-			backToSpawn = false;
+			customer->SetState(Customer::E_CUSTOMER_IDLE);
+			customer->SetBackSpawn(false);
 		}
 	}
 
@@ -1030,34 +1010,34 @@ void RenderDebugText()
 	// Customer debug text
 	RenderText("Cus State: ", face, -0.5f, 0.925f, 0.55f, 0.55f);
 
-	switch (customerState)
+	switch (customer->GetState())
 	{
-	case E_CUSTOMER_EAT:
+	case Customer::E_CUSTOMER_EAT:
 	{
 		RenderText("Eating", face, -0.35f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CUSTOMER_IDLE:
+	case Customer::E_CUSTOMER_IDLE:
 	{
 		RenderText("Idling", face, -0.35f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CUSTOMER_LEAVE:
+	case Customer::E_CUSTOMER_LEAVE:
 	{
 		RenderText("Leaving", face, -0.35f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CUSTOMER_MOVE:
+	case Customer::E_CUSTOMER_MOVE:
 	{
 		RenderText("Moving to table", face, -0.35f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CUSTOMER_ORDER:
+	case Customer::E_CUSTOMER_ORDER:
 	{
 		RenderText("Ordering", face, -0.35f, 0.925f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CUSTOMER_QUEUE:
+	case Customer::E_CUSTOMER_QUEUE:
 	{
 		RenderText("Lining up", face, -0.35f, 0.925f, 0.55f, 0.55f);
 		break;
