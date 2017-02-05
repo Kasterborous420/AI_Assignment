@@ -348,12 +348,17 @@ void SimulationInit()
 	waiter->waiterWayPoints.push_back(table_2->GetPos());
 	waiter->waiterWayPoints.push_back(table_3->GetPos());
 
+	caller->callerWaypoints.push_back(MyVector(caller->GetSpawnLocation().GetX(), caller->GetSpawnLocation().GetY()));
+	caller->callerWaypoints.push_back(table_1->GetPos());
+	caller->callerWaypoints.push_back(table_2->GetPos());
+	caller->callerWaypoints.push_back(table_3->GetPos());
+
 	waiter->SetPos(waiter->waiterWayPoints[0]);
 
 	customer->SetPos(customer->GetSpawnLocation());
 
-	caller->SetPos(caller->GetSpawnLocation());
-
+	caller->SetPos(caller->callerWaypoints[0]);
+	
 	//Set Chef Position
 	chef->SetPos(MyVector(-6.5f, -2.5f));
 	chef->SetSpawn(MyVector(-6.5f, -2.5f));
@@ -367,7 +372,7 @@ void SimulationInit()
 	waiter->SetState(CWaiter::WAITER_STATE::E_WAITER_IDLE);
 	customer->SetState(Customer::CUS_STATE::E_CUSTOMER_IDLE);
 	chef->SetState(Chef::CHEF_STATE::E_CHEF_WAIT);
-
+	caller->SetState(Caller::CALLER_STATE::E_CALLER_IDLE);
 
 	//Set AI Conditions
 	// Set Waiter 1 conditions
@@ -385,6 +390,11 @@ void SimulationInit()
 	// Chef
 	chef->SetAtStation(false);
 	chef->SetArrived(false);
+
+	// Caller
+	caller->SetClear(false);
+	caller->SetArrive(false);
+	caller->SetBackSpawn(false);
 
 	arrived = false;
 }
@@ -577,6 +587,11 @@ void RunFSM()
 	if (customer->GetLine())
 	{
 		customer->SetState(Customer::E_CUSTOMER_QUEUE);
+	}
+
+	if (caller->GetClear())
+	{
+		caller->SetState(Caller::E_CALLER_MOVE);
 	}
 }
 
@@ -772,6 +787,12 @@ void Update()
 		if (((float)(customer->eatEnd - customer->eatStart) / CLOCKS_PER_SEC) >= customer->GetEatTime())
 		{
 			customer->SetState(Customer::E_CUSTOMER_LEAVE);
+
+			messageBoard.setLabel_From("Waiter");
+			messageBoard.setLabel_To("Caller");
+			messageBoard.setMessage("CUSTOMERS LEAVING!");
+
+			caller->SetState(Caller::E_CALLER_MOVE);
 		}
 	}
 
@@ -930,11 +951,72 @@ void Update()
 	}
 
 #pragma endregion
+
+#pragma region Caller Updates
+
+	if (caller->GetState() == Caller::E_CALLER_MOVE)
+	{
+		MyVector direction = (caller->GetPos() - caller->callerWaypoints[tableNumber]).Normalize();
+		float distance = GetDistance(caller->GetPos().GetX(), caller->GetPos().GetY(), caller->callerWaypoints[tableNumber].GetX(), caller->callerWaypoints[tableNumber].GetY());
+
+		if (distance < caller->GetSpeed())
+		{
+			caller->SetArrive(true);
+		}
+		else
+		{
+			caller->SetPos(caller->GetPos() + direction * caller->GetSpeed());
+		}
+
+		if (caller->GetArrive())
+		{
+			caller->SetArrive(false);
+			//caller->SetClear(true);
+			caller->SetState(Caller::E_CALLER_CLEAR);
+			caller->clearStart = clock();
+
+			messageBoard.Reset();
+		}
+	}
+
+	if (caller->GetState() == Caller::E_CALLER_CLEAR)
+	{
+		caller->clearEnd = clock();
+
+		if (((float)(caller->clearEnd - caller->clearStart) / CLOCKS_PER_SEC) >= caller->GetClearTime())
+		{
+			caller->SetClear(false);
+			caller->SetState(Caller::E_CALLER_SPAWN);
+		}
+	}
+
+	if (caller->GetState() == Caller::E_CALLER_SPAWN)
+	{
+		MyVector direction = (caller->GetPos() - caller->GetSpawnLocation()).Normalize();
+		float distance = GetDistance(caller->GetPos().GetX(), caller->GetPos().GetY(), caller->GetSpawnLocation().GetX(), caller->GetSpawnLocation().GetY());
+
+		if (distance < caller->GetSpeed())
+		{
+			caller->SetBackSpawn(true);
+		}
+		else
+		{
+			caller->SetPos(caller->GetPos() + direction * caller->GetSpeed());
+		}
+
+		if (caller->GetBackSpawn())
+		{
+			caller->SetBackSpawn(false);
+			caller->SetState(Caller::E_CALLER_IDLE);
+		}
+	}
+
+#pragma endregion
 }
 
 void RenderDebugText()
 {
-	// Waiter 1 Debug text
+#pragma region Waiter 1 Debug text
 
 	RenderText("WaiterState: ", face, -0.95f, 0.925f, 0.55f, 0.55f);
 
@@ -967,7 +1049,10 @@ void RenderDebugText()
 	}
 	}
 
-	//Chef Debug Text
+#pragma endregion
+
+#pragma region Chef Debug Text
+
 	RenderText("Chef State: ", face, -0.95f, 0.825f, 0.55f, 0.55f);
 
 	switch (chef->GetState())
@@ -989,7 +1074,10 @@ void RenderDebugText()
 	}
 	}
 
-	// Customer debug text
+#pragma endregion
+
+#pragma region Customer debug text
+
 	RenderText("Cus State: ", face, -0.5f, 0.925f, 0.55f, 0.55f);
 
 	switch (customer->GetState())
@@ -1026,7 +1114,37 @@ void RenderDebugText()
 	}
 	}
 
-	
+#pragma endregion
+
+#pragma region Caller debug text
+
+	RenderText("Caller State: ", face, -0.15f, 0.925f, 0.55f, 0.55f);
+
+	switch (caller->GetState())
+	{
+	case Caller::E_CALLER_IDLE:
+	{
+		RenderText("Idling", face, 0.f, 0.925f, 0.55f, 0.55f);
+		break;
+	}
+	case Caller::E_CALLER_CLEAR:
+	{
+		RenderText("Clearing", face, 0.f, 0.925f, 0.55f, 0.55f);
+		break;
+	}
+	case Caller::E_CALLER_MOVE:
+	{
+		RenderText("Moving to table", face, 0.f, 0.925f, 0.55f, 0.55f);
+		break;
+	}
+	case Caller::E_CALLER_SPAWN:
+	{
+		RenderText("Back to spawn", face, 0.f, 0.925f, 0.55f, 0.55f);
+		break;
+	}
+	}
+
+#pragma endregion
 
 }
 

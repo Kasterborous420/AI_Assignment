@@ -27,7 +27,7 @@ private:
 	bool availableCustomers;
 	bool customerPickup;
 	bool isBusy;
-	float waiterSpeed = 0.05f;
+	float waiterSpeed = 0.15f;
 
 
 public:

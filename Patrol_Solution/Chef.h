@@ -19,7 +19,7 @@ public:
 private:
 
 	CHEF_STATE chefState;
-	const float chefSpeed = 0.02f;
+	const float chefSpeed = 0.15f;
 	const float cookTime = 5.0f;
 	MyVector chefPos;
 	MyVector chefSpawn;
