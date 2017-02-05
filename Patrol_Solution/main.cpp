@@ -225,7 +225,11 @@ const float AI_radius = 0.25f;
 const float waypoint_radius = 0.35f;
 const float proximity = 0.2f;
 
-bool autorun = false;
+// Autorun related
+bool autorun = false; // triggers autorun
+bool cycle = false;
+clock_t breakStart, breakEnd;
+const float timer = 2.f;
 
 // Message board
 MessageBoard messageBoard;
@@ -261,10 +265,15 @@ static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, i
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
-	//if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
-	//{
-	//	foodReady = true;
-	//}
+
+	// Triggers autorun
+	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
+	{
+		autorun = true;
+		customer->SetLine(true);
+	}
+
+	// Triggers one-time run
 	if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
 	{
 		customer->SetLine(true);
@@ -593,6 +602,8 @@ void RunFSM()
 	{
 		caller->SetState(Caller::E_CALLER_MOVE);
 	}
+
+
 }
 
 void Update()
@@ -1007,12 +1018,27 @@ void Update()
 		if (caller->GetBackSpawn())
 		{
 			caller->SetBackSpawn(false);
+			cycle = true;
 			caller->SetState(Caller::E_CALLER_IDLE);
+			breakStart = clock();
 		}
 	}
 
 #pragma endregion
+
+	if (autorun && cycle)
+	{
+		breakEnd = clock();
+
+		if (((float)(breakEnd - breakStart) / CLOCKS_PER_SEC) >= timer)
+		{
+			cycle = false;
+			customer->SetLine(true);
+		}
+	}
+
 }
+
 
 void RenderDebugText()
 {
