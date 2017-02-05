@@ -24,7 +24,7 @@ public:
 private:
 
 	CUS_STATE customerState;
-	const float customerSpeed = 0.02f;
+	const float customerSpeed = 0.05f;
 	const float orderTime = 3.f;
 	const float eatTime = 10.f;
 	bool customerSeated;

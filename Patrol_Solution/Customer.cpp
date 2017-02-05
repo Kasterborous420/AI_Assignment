@@ -40,7 +40,7 @@ MyVector Customer::GetSpawnLocation()
 // Customer line location (const)
 MyVector Customer::GetLineLocation()
 {
-	return this->defaultSpawn;
+	return this->defaultLine;
 }
 
 // Customer seated

@@ -95,9 +95,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Caller.h" />
-
     <ClInclude Include="Chef.h" />
-
+    <ClInclude Include="Customer.h" />
     <ClInclude Include="DiningTable.h" />
     <ClInclude Include="MessageBoard.h" />
     <ClInclude Include="MyVector.h" />

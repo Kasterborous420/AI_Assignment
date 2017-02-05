@@ -14,6 +14,8 @@
 #include "DiningTable.h"
 #include "Waiter.h"
 #include "Customer.h"
+#include "Chef.h"
+#include "Caller.h"
 #include "MessageBoard.h"
 
 
@@ -230,22 +232,8 @@ MessageBoard messageBoard;
 
 #pragma region AI_STATES
 // Chef related
-enum CHEF_STATE
-{
-	E_CHEF_COOK,
-	E_CHEF_SERVE,
-	E_CHEF_WAIT,
-	E_CHEF_MAX
-};
-CHEF_STATE chefState;
-const float chefSpeed = 0.02f;
-const float cookTime = 5.0f;
-MyVector chefPos;
-MyVector chefSpawn;
-MyVector chefStation;
-vector<MyVector> chefWaypoints;
-bool isAtStation;
-bool chefArrived;
+Chef *chef = new Chef();
+
 
 //List of orders
 /*
@@ -265,16 +253,7 @@ unsigned int tableNumber;
 Customer *customer = new Customer();
 
 // Caller related
-enum CALLER_STATE
-{
-	E_CALLER_IDLE,
-	E_CALLER_CHECK,
-	E_CALLER_WAIT,
-	E_CALLER_CALL,
-	E_CALLER_MAX
-};
-CALLER_STATE callerState;
-const MyVector callerPos = MyVector(6.25f, 3.5f);
+Caller *caller = new Caller();
 
 #pragma endregion
 
@@ -295,8 +274,7 @@ static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, i
 void SimulationInit()
 {
 	waiter->SetSpawn(MyVector(-9.f, 0.5f));
-
-	chefStation = MyVector(-5.f, -2.5f);
+	chef->SetStation(MyVector(-5.f, -2.5f));
 	srand((unsigned)time(NULL));
 	float seat_offset = 1.25f;
 	float big_seat_offset_diagonal = 2.f;
@@ -374,9 +352,11 @@ void SimulationInit()
 
 	customer->SetPos(customer->GetSpawnLocation());
 
+	caller->SetPos(caller->GetSpawnLocation());
+
 	//Set Chef Position
-	chefPos = MyVector(-6.5f, -2.5f);
-	chefSpawn = MyVector(-6.5f, -2.5f);
+	chef->SetPos(MyVector(-6.5f, -2.5f));
+	chef->SetSpawn(MyVector(-6.5f, -2.5f));
 
 #pragma endregion
 
@@ -386,7 +366,7 @@ void SimulationInit()
 	// Set AI States
 	waiter->SetState(CWaiter::WAITER_STATE::E_WAITER_IDLE);
 	customer->SetState(Customer::CUS_STATE::E_CUSTOMER_IDLE);
-	chefState = E_CHEF_WAIT;
+	chef->SetState(Chef::CHEF_STATE::E_CHEF_WAIT);
 
 
 	//Set AI Conditions
@@ -402,9 +382,11 @@ void SimulationInit()
 	customer->SetInLine(false);
 	customer->SetBackSpawn(false);
 
+	// Chef
+	chef->SetAtStation(false);
+	chef->SetArrived(false);
+
 	arrived = false;
-	isAtStation = false;
-	chefArrived = false;
 }
 
 
@@ -535,7 +517,7 @@ void RenderObjects()
 	RenderRectangle(7.f, 4.25f, 7.25f, 2.75f, 0.5f, 0.5f, 0.5f);
 
 	// Caller
-	RenderFillCircle(callerPos.x, callerPos.y, AI_radius, 0.f, 1.f, 0.f); // Caller object
+	RenderFillCircle(caller->GetPos().GetX(), caller->GetPos().GetY(), AI_radius, 0.f, 1.f, 0.f); // Caller object
 
 	// CHEFS STUFF
 
@@ -560,7 +542,7 @@ void RenderObjects()
 
 
 	// Chef
-	RenderFillCircle(chefPos.GetX(), chefPos.GetY(), AI_radius, 1.f, 0.f, 0.f);
+	RenderFillCircle(chef->GetPos().GetX(), chef->GetPos().GetY(), AI_radius, 1.f, 0.f, 0.f);
 
 
 	//// Waypoints
@@ -575,11 +557,11 @@ void RenderObjects()
 
 void RunFSM()
 {
-	if (waiter->GetFoodReady() && chefArrived == true)
+	if (waiter->GetFoodReady() && chef->GetArrived())
 	{
 		waiter->SetState(CWaiter::E_WAITER_SERVE);
 		waiter->SetFoodReady(false);
-		chefArrived = false;
+		chef->SetArrived(false);
 	}
 
 	if (waiter->GetAvailableCustomers())
@@ -624,8 +606,8 @@ void Update()
 
 	if (waiter->GetState() == CWaiter::E_WAITER_PICKUP)
 	{
-		MyVector direction = (waiter->GetPos() - chefStation).Normalize();
-		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), chefStation.GetX(), chefStation.GetY());
+		MyVector direction = (waiter->GetPos() - chef->GetStation()).Normalize();
+		float distance = GetDistance(waiter->GetPos().GetX(), waiter->GetPos().GetY(), chef->GetStation().GetX(), chef->GetStation().GetY());
 		if (distance < waiter->GetSpeed())
 		{
 			arrived = true;
@@ -732,7 +714,7 @@ void Update()
 		}
 		else
 		{
-			customer->GetPos() = customer->GetPos() + direction * customer->GetSpeed();
+			customer->SetPos(customer->GetPos() + direction * customer->GetSpeed());
 		}
 
 		if (customer->GetInLine())
@@ -759,7 +741,7 @@ void Update()
 		}
 		else
 		{
-			customer->GetPos() = customer->GetPos() + direction * customer->GetSpeed();
+			customer->SetPos(customer->GetPos() + direction * customer->GetSpeed());
 		}
 
 		if (customer->GetSeated())
@@ -804,7 +786,7 @@ void Update()
 		}
 		else
 		{
-			customer->GetPos() = customer->GetPos() + direction * customer->GetSpeed();
+			customer->SetPos(customer->GetPos() + direction * customer->GetSpeed());
 		}
 
 		if (customer->GetBackSpawn())
@@ -818,27 +800,27 @@ void Update()
 
 #pragma region Chef Updates
 	// When chef is idle with no cooking
-	if (chefState == E_CHEF_WAIT)
+	if (chef->GetState() == Chef::E_CHEF_WAIT)
 	{
 		//if there is an existing order
 		if (ListOfOrders.size() > 0)
 		{
-			MyVector direction = (chefPos - cookingStation_1).Normalize();
-			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), cookingStation_1.GetX(), cookingStation_1.GetY());
+			MyVector direction = (chef->GetPos() - cookingStation_1).Normalize();
+			float distance = GetDistance(chef->GetPos().GetX(), chef->GetPos().GetY(), cookingStation_1.GetX(), cookingStation_1.GetY());
 
-			if (distance < chefSpeed)
+			if (distance < chef->GetSpeed())
 			{
-				isAtStation = true;
+				chef->SetAtStation(true);
 			}
 			else
 			{
-				chefPos = chefPos + direction * chefSpeed;
+				chef->SetPos(chef->GetPos() + direction * chef->GetSpeed());
 			}
 
-			if (isAtStation)
+			if (chef->GetAtStation())
 			{
-				chefState = E_CHEF_COOK;
-				isAtStation = false;
+				chef->SetState(Chef::E_CHEF_COOK);
+				chef->SetAtStation(false);
 
 				// Start the cook time
 				// Assign current time value to t
@@ -849,21 +831,21 @@ void Update()
 		//traverse back to spawn point?
 		else if (ListOfOrders.size() == 0)
 		{
-			MyVector direction = (chefPos - chefSpawn).Normalize();
-			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), chefSpawn.GetX(), chefSpawn.GetY());
+			MyVector direction = (chef->GetPos() - chef->GetSpawn()).Normalize();
+			float distance = GetDistance(chef->GetPos().GetX(), chef->GetPos().GetY(), chef->GetSpawn().GetX(), chef->GetSpawn().GetY());
 
-			if (distance < chefSpeed)
+			if (distance < chef->GetSpeed())
 			{
-				isAtStation = true;
+				chef->SetAtStation(true);
 			}
 			else
 			{
-				chefPos = chefPos + direction * chefSpeed;
+				chef->SetPos(chef->GetPos() + direction * chef->GetSpeed());
 			}
 		}
 
 	}
-	if (chefState == E_CHEF_COOK)
+	if (chef->GetState() == Chef::E_CHEF_COOK)
 	{
 		// Get Current Time 
 		// Assign to t2
@@ -873,11 +855,11 @@ void Update()
 		if (((float)(t2 - t1) / CLOCKS_PER_SEC) >= 5.f)
 		{
 			waiter->SetFoodReady(true);
-			chefState = E_CHEF_SERVE;
+			chef->SetState(Chef::E_CHEF_SERVE);
 		}
 	}
 
-	if (chefState == E_CHEF_SERVE)
+	if (chef->GetState() == Chef::E_CHEF_SERVE)
 	{
 		if (waiter->GetBusy())
 		{
@@ -927,22 +909,22 @@ void Update()
 		}
 		else if (!waiter->GetBusy())
 		{
-			MyVector direction = (chefPos - waiter->GetSpawn()).Normalize();
-			float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiter->GetSpawn().GetX(), waiter->GetSpawn().GetY());
+			MyVector direction = (chef->GetPos() - waiter->GetSpawn()).Normalize();
+			float distance = GetDistance(chef->GetPos().GetX(), chef->GetPos().GetY(), waiter->GetSpawn().GetX(), waiter->GetSpawn().GetY());
 
-			if (distance < chefSpeed)
+			if (distance < chef->GetSpeed())
 			{
-				chefArrived = true;
+				chef->SetArrived(true);
 			}
 			else
 			{
-				chefPos = chefPos + direction * chefSpeed;
+				chef->SetPos(chef->GetPos() + direction * chef->GetSpeed());
 			}
 
 			if (waiter->GetState() == CWaiter::E_WAITER_SERVE)
 			{
-				chefState = E_CHEF_WAIT;
-				chefArrived = false;
+				chef->SetState(Chef::E_CHEF_WAIT);
+				chef->SetArrived(false);
 			}
 		}
 	}
@@ -988,19 +970,19 @@ void RenderDebugText()
 	//Chef Debug Text
 	RenderText("Chef State: ", face, -0.95f, 0.825f, 0.55f, 0.55f);
 
-	switch (chefState)
+	switch (chef->GetState())
 	{
-	case E_CHEF_WAIT:
+	case Chef::E_CHEF_WAIT:
 	{
 		RenderText("Chef_Wait", face, -0.75f, 0.825f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CHEF_COOK:
+	case Chef::E_CHEF_COOK:
 	{
 		RenderText("Chef_Cook", face, -0.75f, 0.825f, 0.55f, 0.55f);
 		break;
 	}
-	case E_CHEF_SERVE:
+	case Chef::E_CHEF_SERVE:
 	{
 		RenderText("Chef_Serve", face, -0.75f, 0.825f, 0.55f, 0.55f);
 		break;
