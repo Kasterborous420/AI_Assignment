@@ -675,6 +675,9 @@ void Update()
 		{
 			waiter->SetState(CWaiter::E_WAITER_IDLE);
 			customer->SetState(Customer::E_CUSTOMER_EAT);
+
+			messageBoard.Reset();
+
 			arrived = false;
 			customer->eatStart = clock();
 		}
@@ -696,12 +699,16 @@ void Update()
 
 		if (waiter->GetCustomerPickup())
 		{
+			messageBoard.Reset();
+
 			waiter->SetState(CWaiter::E_WAITER_MOVE);
 			customer->SetState(Customer::E_CUSTOMER_MOVE);
 			waiter->SetCustomerPickup(false);
 			waiter->SetAvailableCustomers(false);
 
-			messageBoard.Reset();
+			messageBoard.setLabel_From("Waiter");
+			messageBoard.setLabel_To("Caller");
+			messageBoard.setMessage("Escorting to seat!");
 		}
 	}
 
@@ -722,6 +729,7 @@ void Update()
 		if (customer->GetSeated())
 		{
 			customer->SetSeated(false);
+			messageBoard.Reset();
 		}
 	}
 
@@ -788,6 +796,10 @@ void Update()
 		{
 			ListOfOrders.push_back(1);
 			customer->SetState(Customer::E_CUSTOMER_IDLE);
+
+			messageBoard.setLabel_From("Chef");
+			messageBoard.setLabel_To("Waiter");
+			messageBoard.setMessage("Preparing food!");
 		}
 	}
 
@@ -886,8 +898,14 @@ void Update()
 		// If elasped time is more than 5 seconds
 		if (((float)(t2 - t1) / CLOCKS_PER_SEC) >= 5.f)
 		{
+			messageBoard.Reset();
+
 			waiter->SetFoodReady(true);
 			chef->SetState(Chef::E_CHEF_SERVE);
+
+			messageBoard.setLabel_From("Chef");
+			messageBoard.setLabel_To("Waiter");
+			messageBoard.setMessage("FOOD'S READY!");
 		}
 	}
 
@@ -981,12 +999,16 @@ void Update()
 
 		if (caller->GetArrive())
 		{
+			messageBoard.Reset();
+
 			caller->SetArrive(false);
 			//caller->SetClear(true);
 			caller->SetState(Caller::E_CALLER_CLEAR);
 			caller->clearStart = clock();
 
-			messageBoard.Reset();
+			messageBoard.setLabel_From("Caller");
+			messageBoard.setLabel_To("Waiter");
+			messageBoard.setMessage("Clearing");
 		}
 	}
 
@@ -996,8 +1018,14 @@ void Update()
 
 		if (((float)(caller->clearEnd - caller->clearStart) / CLOCKS_PER_SEC) >= caller->GetClearTime())
 		{
+			messageBoard.Reset();
+
 			caller->SetClear(false);
 			caller->SetState(Caller::E_CALLER_SPAWN);
+
+			messageBoard.setLabel_From("Caller");
+			messageBoard.setLabel_To("Waiter");
+			messageBoard.setMessage("Cleared");
 		}
 	}
 
@@ -1017,6 +1045,7 @@ void Update()
 
 		if (caller->GetBackSpawn())
 		{
+			messageBoard.Reset();
 			caller->SetBackSpawn(false);
 			cycle = true;
 			caller->SetState(Caller::E_CALLER_IDLE);
