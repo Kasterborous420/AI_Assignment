@@ -1,5 +1,6 @@
 #pragma once
 #include "MyVector.h"
+#include "Customer.h"
 #include <vector>
 using std::vector;
 
@@ -28,6 +29,8 @@ private:
 	bool customerPickup;
 	bool isBusy;
 	float waiterSpeed = 0.15f;
+
+	Customer* assignedCustomer;
 
 
 public:
@@ -58,6 +61,9 @@ public:
 	void SetBusy(bool busyornot);
 
 	const float GetSpeed();
+
+	Customer* GetAssignedCustomer();
+	void SetAssignedCustomer(Customer *customer);
 
 
 

@@ -83,3 +83,12 @@ const float CWaiter::GetSpeed()
 {
 	return this->waiterSpeed;
 }
+
+Customer* CWaiter::GetAssignedCustomer()
+{
+	return this->assignedCustomer;
+}
+void CWaiter::SetAssignedCustomer(Customer *customer)
+{
+	this->assignedCustomer = customer;
+}

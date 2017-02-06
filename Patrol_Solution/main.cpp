@@ -221,6 +221,7 @@ MyVector bigtable;
 MyVector tableCaller;
 
 vector<CWaiter*> waiterList;
+vector<Customer*> customerList;
 
 // AI radius
 const float AI_radius = 0.25f;
@@ -258,7 +259,9 @@ CWaiter *waiter_3 = new CWaiter();
 unsigned int tableNumber;
 
 // Customer related
-Customer *customer = new Customer();
+Customer *customer_1 = new Customer();
+Customer *customer_2 = new Customer();
+Customer *customer_3 = new Customer();
 
 // Caller related
 Caller *caller = new Caller();
@@ -274,13 +277,19 @@ static void KeyCallBack(GLFWwindow *window, int key, int scancode, int action, i
 	if (key == GLFW_KEY_F1 && action == GLFW_PRESS)
 	{
 		autorun = true;
-		customer->SetLine(true);
+		for (int i = 0; i < customerList.size(); i++)
+		{
+			customerList[i]->SetLine(true);
+		}
 	}
 
 	// Triggers one-time run
 	if (key == GLFW_KEY_F2 && action == GLFW_PRESS)
 	{
-		customer->SetLine(true);
+		for (int i = 0; i < customerList.size(); i++)
+		{
+			customerList[i]->SetLine(true);
+		}
 	}
 }
 
@@ -289,6 +298,10 @@ void SimulationInit()
 	waiterList.push_back(waiter_1);
 	waiterList.push_back(waiter_2);
 	waiterList.push_back(waiter_3);
+
+	customerList.push_back(customer_1);
+	customerList.push_back(customer_2);
+	customerList.push_back(customer_3);
 	float xpos = -9.f;
 	for (int i = 0; i < waiterList.size(); i++)
 	{
@@ -382,9 +395,10 @@ void SimulationInit()
 	{
 		waiterList[i]->SetPos(waiterList[i]->waiterWayPoints[0]);
 	}
-
-	customer->SetPos(customer->GetSpawnLocation());
-
+	for (int i = 0; i < customerList.size(); i++)
+	{
+		customerList[i]->SetPos(customerList[i]->GetSpawnLocation());
+	}
 	caller->SetPos(caller->callerWaypoints[0]);
 	
 	//Set Chef Position
@@ -401,7 +415,10 @@ void SimulationInit()
 	{
 		waiterList[i]->SetState(CWaiter::WAITER_STATE::E_WAITER_IDLE);
 	}
-	customer->SetState(Customer::CUS_STATE::E_CUSTOMER_IDLE);
+	for (int i = 0; i < customerList.size(); i++)
+	{
+		customerList[i]->SetState(Customer::CUS_STATE::E_CUSTOMER_IDLE);
+	}
 	chef->SetState(Chef::CHEF_STATE::E_CHEF_WAIT);
 	caller->SetState(Caller::CALLER_STATE::E_CALLER_IDLE);
 
@@ -416,10 +433,13 @@ void SimulationInit()
 	}
 
 	// Customer
-	customer->SetSeated(false);
-	customer->SetLine(false);
-	customer->SetInLine(false);
-	customer->SetBackSpawn(false);
+	for (int i = 0; i < customerList.size(); i++)
+	{
+		customerList[i]->SetSeated(false);
+		customerList[i]->SetLine(false);
+		customerList[i]->SetInLine(false);
+		customerList[i]->SetBackSpawn(false);
+	}
 
 	// Chef
 	chef->SetAtStation(false);
@@ -579,7 +599,10 @@ void RenderObjects()
 	}
 
 	// Customer (temp)
-	RenderFillCircle(customer->GetPos().x, customer->GetPos().y, AI_radius, 0.f, 0.9f, 1.f); // Customer 1 object
+	for (int i = 0; i < customerList.size(); i++)
+	{
+		RenderFillCircle(customerList[i]->GetPos().x, customerList[i]->GetPos().y, AI_radius, 0.f, 0.9f, 1.f); // Customer 1 object
+	}
 
 
 	// Chef
@@ -612,21 +635,25 @@ void RunFSM()
 			if (waiterList[i]->GetAvailableCustomers())
 			{
 				waiterList[i]->SetState(CWaiter::E_WAITER_PICKUPCUSTOMER);
+				waiterList[i]->SetAssignedCustomer(customerList[i]);
 				waiterList[i]->SetBusy(true);
 			}
 
 			if (waiterList[i]->GetCustomerPickup())
 			{
-				customer->SetState(Customer::E_CUSTOMER_MOVE);
+				customerList[i]->SetState(Customer::E_CUSTOMER_MOVE);
 				waiterList[i]->SetBusy(true);
 			}
 
 		}
 	}
 
-	if (customer->GetLine())
+	for (int i = 0; i < customerList.size(); i++)
 	{
-		customer->SetState(Customer::E_CUSTOMER_QUEUE);
+		if (customerList[i]->GetLine())
+		{
+			customerList[i]->SetState(Customer::E_CUSTOMER_QUEUE);
+		}
 	}
 
 	if (caller->GetClear())
@@ -707,16 +734,16 @@ void Update()
 			{
 				waiterList[i]->SetState(CWaiter::E_WAITER_IDLE);
 				waiterList[i]->SetBusy(false);
-				customer->SetState(Customer::E_CUSTOMER_EAT);
+				waiterList[i]->GetAssignedCustomer()->SetState(Customer::E_CUSTOMER_EAT);
 				arrived = false;
-				customer->eatStart = clock();
+				waiterList[i]->GetAssignedCustomer()->eatStart = clock();
 			}
 
 		}
 		if (waiterList[i]->GetState() == CWaiter::E_WAITER_PICKUPCUSTOMER)
 		{
-			MyVector direction = (waiterList[i]->GetPos() - customer->GetPos()).Normalize();
-			float distance = GetDistance(waiterList[i]->GetPos().GetX(), waiterList[i]->GetPos().GetY(), customer->GetPos().GetX(), customer->GetPos().GetY());
+			MyVector direction = (waiterList[i]->GetPos() - waiterList[i]->GetAssignedCustomer()->GetPos()).Normalize();
+			float distance = GetDistance(waiterList[i]->GetPos().GetX(), waiterList[i]->GetPos().GetY(), waiterList[i]->GetAssignedCustomer()->GetPos().GetX(), waiterList[i]->GetAssignedCustomer()->GetPos().GetY());
 
 			if (distance < waiterList[i]->GetSpeed())
 			{
@@ -730,7 +757,7 @@ void Update()
 			if (waiterList[i]->GetCustomerPickup())
 			{
 				waiterList[i]->SetState(CWaiter::E_WAITER_MOVE);
-				customer->SetState(Customer::E_CUSTOMER_MOVE);
+				waiterList[i]->GetAssignedCustomer()->SetState(Customer::E_CUSTOMER_MOVE);
 				waiterList[i]->SetCustomerPickup(false);
 				waiterList[i]->SetAvailableCustomers(false);
 
@@ -746,16 +773,16 @@ void Update()
 
 				if (distance < waiterList[i]->GetSpeed())
 				{
-					customer->SetSeated(true);
+					waiterList[i]->GetAssignedCustomer()->SetSeated(true);
 				}
 				else
 				{
 					waiterList[i]->SetPos(waiterList[i]->GetPos() + direction * waiterList[i]->GetSpeed());
 				}
 
-				if (customer->GetSeated())
+				if (waiterList[i]->GetAssignedCustomer()->GetSeated())
 				{
-					customer->SetSeated(false);
+					waiterList[i]->GetAssignedCustomer()->SetSeated(false);
 				}
 			}
 		}
@@ -764,119 +791,121 @@ void Update()
 #pragma endregion
 
 #pragma region Customer Updates
-
-	if (customer->GetState() == Customer::E_CUSTOMER_QUEUE)
+	for (int i = 0; i < customerList.size(); i++)
 	{
-		MyVector direction = (customer->GetPos() - customer->GetLineLocation()).Normalize();
-		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), customer->GetLineLocation().GetX(), customer->GetLineLocation().GetY());
-		CWaiter* fw = new CWaiter();
-		for (int i = 0; i < waiterList.size(); i++)
+		if (customerList[i]->GetState() == Customer::E_CUSTOMER_QUEUE)
 		{
-			if (waiterList[i]->GetBusy() == false)
+			MyVector direction = (customerList[i]->GetPos() - customerList[i]->GetLineLocation()).Normalize();
+			float distance = GetDistance(customerList[i]->GetPos().GetX(), customerList[i]->GetPos().GetY(), customerList[i]->GetLineLocation().GetX(), customerList[i]->GetLineLocation().GetY());
+			CWaiter* fw = new CWaiter();
+			for (int i = 0; i < waiterList.size(); i++)
 			{
-				fw = waiterList[i];
+				if (waiterList[i]->GetBusy() == false)
+				{
+					fw = waiterList[i];
+				}
+			}
+
+			if (customerList[i]->GetAssignedWaiter() == NULL)
+			{
+				customerList[i]->SetAssignedWaiter(fw);
+				fw->SetAvailableCustomers(true);
+			}
+
+			if (distance < customerList[i]->GetSpeed())
+			{
+				customerList[i]->SetInLine(true);
+			}
+			else
+			{
+				customerList[i]->SetPos(customerList[i]->GetPos() + direction * customerList[i]->GetSpeed());
+			}
+
+			if (customerList[i]->GetInLine())
+			{
+				messageBoard.setLabel_From("Caller");
+				messageBoard.setLabel_To("Waiter");
+				messageBoard.setMessage("CUSTOMERS HERE!");
+
+				customerList[i]->SetState(Customer::E_CUSTOMER_IDLE);
+				customerList[i]->SetLine(false);
+				customerList[i]->SetInLine(false);
+
+
 			}
 		}
 
-		if (customer->GetAssignedWaiter() == NULL)
+		if (customerList[i]->GetState() == Customer::E_CUSTOMER_MOVE)
 		{
-			customer->SetAssignedWaiter(fw);
-			fw->SetAvailableCustomers(true);
+			MyVector direction = (customerList[i]->GetPos() - seats[0]).Normalize();
+			float distance = GetDistance(customerList[i]->GetPos().GetX(), customerList[i]->GetPos().GetY(), seats[0].GetX(), seats[0].GetY());
+
+			if (distance < customerList[i]->GetSpeed())
+			{
+				customerList[i]->SetSeated(true);
+			}
+			else
+			{
+				customerList[i]->SetPos(customerList[i]->GetPos() + direction * customerList[i]->GetSpeed());
+			}
+
+			if (customerList[i]->GetSeated())
+			{
+				customerList[i]->SetState(Customer::E_CUSTOMER_ORDER);
+				CWaiter* assignedWaiter = customerList[i]->GetAssignedWaiter();
+				assignedWaiter->SetState(CWaiter::E_WAITER_IDLE);
+				customerList[i]->SetSeated(false);
+				customerList[i]->orderStart = clock();
+			}
 		}
 
-		if (distance < customer->GetSpeed())
+		if (customerList[i]->GetState() == Customer::E_CUSTOMER_ORDER)
 		{
-			customer->SetInLine(true);
-		}
-		else
-		{
-			customer->SetPos(customer->GetPos() + direction * customer->GetSpeed());
-		}
+			//Add an order from table 1
+			customerList[i]->orderEnd = clock();
 
-		if (customer->GetInLine())
-		{
-			messageBoard.setLabel_From("Caller");
-			messageBoard.setLabel_To("Waiter");
-			messageBoard.setMessage("CUSTOMERS HERE!");
-
-			customer->SetState(Customer::E_CUSTOMER_IDLE);
-			customer->SetLine(false);
-			customer->SetInLine(false);
-		
-			
-		}
-	}
-
-	if (customer->GetState() == Customer::E_CUSTOMER_MOVE)
-	{
-		MyVector direction = (customer->GetPos() - seats[0]).Normalize();
-		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), seats[0].GetX(), seats[0].GetY());
-
-		if (distance < customer->GetSpeed())
-		{
-			customer->SetSeated(true);
-		}
-		else
-		{
-			customer->SetPos(customer->GetPos() + direction * customer->GetSpeed());
+			if (((float)(customerList[i]->orderEnd - customerList[i]->orderStart) / CLOCKS_PER_SEC) >= customerList[i]->GetOrderTime())
+			{
+				ListOfOrders.push_back(1);
+				customerList[i]->SetState(Customer::E_CUSTOMER_IDLE);
+			}
 		}
 
-		if (customer->GetSeated())
+		if (customerList[i]->GetState() == Customer::E_CUSTOMER_EAT)
 		{
-			customer->SetState(Customer::E_CUSTOMER_ORDER);
-			CWaiter* assignedWaiter = customer->GetAssignedWaiter();
-			assignedWaiter->SetState(CWaiter::E_WAITER_IDLE);
-			customer->SetSeated(false);
-			customer->orderStart = clock();
-		}
-	}
+			customerList[i]->eatEnd = clock();
 
-	if (customer->GetState() == Customer::E_CUSTOMER_ORDER)
-	{
-		//Add an order from table 1
-		customer->orderEnd = clock();
+			if (((float)(customerList[i]->eatEnd - customerList[i]->eatStart) / CLOCKS_PER_SEC) >= customerList[i]->GetEatTime())
+			{
+				customerList[i]->SetState(Customer::E_CUSTOMER_LEAVE);
 
-		if (((float)(customer->orderEnd - customer->orderStart) / CLOCKS_PER_SEC) >= customer->GetOrderTime())
-		{
-			ListOfOrders.push_back(1);
-			customer->SetState(Customer::E_CUSTOMER_IDLE);
-		}
-	}
+				messageBoard.setLabel_From("Waiter");
+				messageBoard.setLabel_To("Caller");
+				messageBoard.setMessage("CUSTOMERS LEAVING!");
 
-	if (customer->GetState() == Customer::E_CUSTOMER_EAT)
-	{
-		customer->eatEnd = clock();
-
-		if (((float)(customer->eatEnd - customer->eatStart) / CLOCKS_PER_SEC) >= customer->GetEatTime())
-		{
-			customer->SetState(Customer::E_CUSTOMER_LEAVE);
-
-			messageBoard.setLabel_From("Waiter");
-			messageBoard.setLabel_To("Caller");
-			messageBoard.setMessage("CUSTOMERS LEAVING!");
-
-			caller->SetState(Caller::E_CALLER_MOVE);
-		}
-	}
-
-	if (customer->GetState() == Customer::E_CUSTOMER_LEAVE)
-	{
-		MyVector direction = (customer->GetPos() - customer->GetSpawnLocation()).Normalize();
-		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), customer->GetSpawnLocation().x, customer->GetSpawnLocation().y);
-
-		if (distance < customer->GetSpeed())
-		{
-			customer->SetBackSpawn(true);
-		}
-		else
-		{
-			customer->SetPos(customer->GetPos() + direction * customer->GetSpeed());
+				caller->SetState(Caller::E_CALLER_MOVE);
+			}
 		}
 
-		if (customer->GetBackSpawn())
+		if (customerList[i]->GetState() == Customer::E_CUSTOMER_LEAVE)
 		{
-			customer->SetState(Customer::E_CUSTOMER_IDLE);
-			customer->SetBackSpawn(false);
+			MyVector direction = (customerList[i]->GetPos() - customerList[i]->GetSpawnLocation()).Normalize();
+			float distance = GetDistance(customerList[i]->GetPos().GetX(), customerList[i]->GetPos().GetY(), customerList[i]->GetSpawnLocation().x, customerList[i]->GetSpawnLocation().y);
+
+			if (distance < customerList[i]->GetSpeed())
+			{
+				customerList[i]->SetBackSpawn(true);
+			}
+			else
+			{
+				customerList[i]->SetPos(customerList[i]->GetPos() + direction * customerList[i]->GetSpeed());
+			}
+
+			if (customerList[i]->GetBackSpawn())
+			{
+				customerList[i]->SetState(Customer::E_CUSTOMER_IDLE);
+				customerList[i]->SetBackSpawn(false);
+			}
 		}
 	}
 
@@ -1100,7 +1129,7 @@ void Update()
 		if (((float)(breakEnd - breakStart) / CLOCKS_PER_SEC) >= timer)
 		{
 			cycle = false;
-			customer->SetLine(true);
+			//customerList[i]->SetLine(true);
 		}
 	}
 
@@ -1178,7 +1207,7 @@ void RenderDebugText()
 
 	RenderText("Cus State: ", face, -0.5f, 0.925f, 0.55f, 0.55f);
 
-	switch (customer->GetState())
+	switch (customerList[0]->GetState())
 	{
 	case Customer::E_CUSTOMER_EAT:
 	{

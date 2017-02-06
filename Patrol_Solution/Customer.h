@@ -3,8 +3,9 @@
 #include "MyVector.h"
 #include <vector>
 #include <time.h>
-#include "Waiter.h"
 using std::vector;
+
+class CWaiter;
 
 class Customer
 {
