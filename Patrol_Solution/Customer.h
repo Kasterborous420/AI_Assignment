@@ -3,6 +3,7 @@
 #include "MyVector.h"
 #include <vector>
 #include <time.h>
+#include "Waiter.h"
 using std::vector;
 
 class Customer
@@ -34,11 +35,13 @@ private:
 	MyVector customerPos;
 	const MyVector defaultSpawn = MyVector(12.f, 0.f);
 	const MyVector defaultLine = MyVector(8.5f, 3.5f);
+	CWaiter* assignedWaiter;
 
 public:
 
 	clock_t orderStart, orderEnd, eatStart, eatEnd;
 
+	
 	Customer();
 	~Customer();
 
@@ -67,5 +70,8 @@ public:
 	// Get const MyVectors
 	MyVector GetSpawnLocation();
 	MyVector GetLineLocation();
+
+	CWaiter* GetAssignedWaiter();
+	void SetAssignedWaiter(CWaiter* waiter);
 };
 

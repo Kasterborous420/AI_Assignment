@@ -102,3 +102,13 @@ const float Customer::GetEatTime()
 {
 	return this->eatTime;
 }
+
+CWaiter* Customer::GetAssignedWaiter()
+{
+	return this->assignedWaiter;
+}
+
+void Customer::SetAssignedWaiter(CWaiter* waiter)
+{
+	this->assignedWaiter = waiter;
+}
