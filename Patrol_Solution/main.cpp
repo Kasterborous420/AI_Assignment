@@ -741,8 +741,8 @@ void Update()
 
 			if (waiterList[i]->GetState() == CWaiter::E_WAITER_MOVE)
 			{
-				MyVector direction = (waiterList[i]->GetPos() - waiterList[i]->waiterWayPoints[1]).Normalize();
-				float distance = GetDistance(waiterList[i]->GetPos().GetX(), waiterList[i]->GetPos().GetY(), waiterList[i]->waiterWayPoints[1].GetX(), waiterList[i]->waiterWayPoints[1].GetY());
+				MyVector direction = (waiterList[i]->GetPos() - waiterList[i]->waiterWayPoints[tableNumber]).Normalize();
+				float distance = GetDistance(waiterList[i]->GetPos().GetX(), waiterList[i]->GetPos().GetY(), waiterList[i]->waiterWayPoints[tableNumber].GetX(), waiterList[i]->waiterWayPoints[tableNumber].GetY());
 
 				if (distance < waiterList[i]->GetSpeed())
 				{
@@ -769,6 +769,20 @@ void Update()
 	{
 		MyVector direction = (customer->GetPos() - customer->GetLineLocation()).Normalize();
 		float distance = GetDistance(customer->GetPos().GetX(), customer->GetPos().GetY(), customer->GetLineLocation().GetX(), customer->GetLineLocation().GetY());
+		CWaiter* fw = new CWaiter();
+		for (int i = 0; i < waiterList.size(); i++)
+		{
+			if (waiterList[i]->GetBusy() == false)
+			{
+				fw = waiterList[i];
+			}
+		}
+
+		if (customer->GetAssignedWaiter() == NULL)
+		{
+			customer->SetAssignedWaiter(fw);
+			fw->SetAvailableCustomers(true);
+		}
 
 		if (distance < customer->GetSpeed())
 		{
@@ -788,15 +802,7 @@ void Update()
 			customer->SetState(Customer::E_CUSTOMER_IDLE);
 			customer->SetLine(false);
 			customer->SetInLine(false);
-			for (int i = 0; i < waiterList.size(); i++)
-			{
-				if (waiterList[i]->GetBusy() == false)
-				{
-					waiterList[i]->SetAvailableCustomers(true);
-					customer->SetAssignedWaiter(waiterList[i]);
-					break;
-				}
-			}
+		
 			
 		}
 	}
