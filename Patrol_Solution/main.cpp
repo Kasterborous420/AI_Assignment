@@ -17,6 +17,7 @@
 #include "Chef.h"
 #include "Caller.h"
 #include "MessageBoard.h"
+#include <algorithm>
 
 
 #include FT_FREETYPE_H
@@ -222,6 +223,7 @@ MyVector tableCaller;
 
 vector<CWaiter*> waiterList;
 vector<Customer*> customerList;
+vector<Customer*> memevariable;
 
 // AI radius
 const float AI_radius = 0.25f;
@@ -302,6 +304,11 @@ void SimulationInit()
 	customerList.push_back(customer_1);
 	customerList.push_back(customer_2);
 	customerList.push_back(customer_3);
+
+	memevariable.push_back(customer_1);
+	memevariable.push_back(customer_2);
+	memevariable.push_back(customer_3);
+
 	float xpos = -9.f;
 	for (int i = 0; i < waiterList.size(); i++)
 	{
@@ -632,10 +639,13 @@ void RunFSM()
 				waiterList[i]->SetBusy(true);
 				chef->SetArrived(false);
 			}
-			if (waiterList[i]->GetAvailableCustomers())
+			// if there are still customers
+			if (memevariable.size() > 0)
 			{
 				waiterList[i]->SetState(CWaiter::E_WAITER_PICKUPCUSTOMER);
-				waiterList[i]->SetAssignedCustomer(customerList[i]);
+				waiterList[i]->SetAssignedCustomer(memevariable.back());
+				memevariable.back()->SetAssignedWaiter(waiterList[i]);
+				memevariable.pop_back();
 				waiterList[i]->SetBusy(true);
 			}
 
@@ -673,7 +683,7 @@ void Update()
 		{
 			MyVector direction = (waiterList[i]->GetPos() - waiterList[i]->GetSpawn()).Normalize();
 			float distance = GetDistance(waiterList[i]->GetPos().GetX(), waiterList[i]->GetPos().GetY(), waiterList[i]->GetSpawn().GetX(), waiterList[i]->GetSpawn().GetY());
-
+			waiterList[i]->SetBusy(false);
 			if (distance < waiterList[i]->GetSpeed())
 			{
 				arrived = true;
@@ -837,8 +847,8 @@ void Update()
 
 		if (customerList[i]->GetState() == Customer::E_CUSTOMER_MOVE)
 		{
-			MyVector direction = (customerList[i]->GetPos() - seats[0]).Normalize();
-			float distance = GetDistance(customerList[i]->GetPos().GetX(), customerList[i]->GetPos().GetY(), seats[0].GetX(), seats[0].GetY());
+			MyVector direction = (customerList[i]->GetPos() - seats[i]).Normalize();
+			float distance = GetDistance(customerList[i]->GetPos().GetX(), customerList[i]->GetPos().GetY(), seats[i].GetX(), seats[i].GetY());
 
 			if (distance < customerList[i]->GetSpeed())
 			{
@@ -981,54 +991,6 @@ void Update()
 
 	if (chef->GetState() == Chef::E_CHEF_SERVE)
 	{
-		/*if (waiter->GetBusy())
-		{*/
-			/*if (waiter2_isBusy)
-			{
-				if (!waiter3_isBusy)
-				{
-					MyVector direction = (chefPos - waiterThreeSpawn).Normalize();
-					float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiterThreeSpawn.GetX(), waiterThreeSpawn.GetY());
-
-					if (distance < chefSpeed)
-					{
-						chefArrived = true;
-					}
-					else
-					{
-						chefPos = chefPos + direction * chefSpeed;
-					}
-
-					if (waiterOneState == E_WAITER_SERVE)
-					{
-						chefState = E_CHEF_WAIT;
-						chefArrived = false;
-					}
-				}
-			}
-			else if (!waiter2_isBusy)
-			{
-				MyVector direction = (chefPos - waiterTwoSpawn).Normalize();
-				float distance = GetDistance(chefPos.GetX(), chefPos.GetY(), waiterTwoSpawn.GetX(), waiterTwoSpawn.GetY());
-
-				if (distance < chefSpeed)
-				{
-					chefArrived = true;
-				}
-				else
-				{
-					chefPos = chefPos + direction * chefSpeed;
-				}
-
-				if (waiterOneState == E_WAITER_SERVE)
-				{
-					chefState = E_CHEF_WAIT;
-					chefArrived = false;
-				}
-			}*/
-		//}
-		//else if (!waiter->GetBusy())
-		//{
 		for (int i = 0; i < waiterList.size(); i++)
 		{
 			if (waiterList[i]->GetBusy() == false)
@@ -1039,16 +1001,17 @@ void Update()
 				if (distance < chef->GetSpeed())
 				{
 					chef->SetArrived(true);
+					waiterList[i]->SetState(CWaiter::E_WAITER_SERVE);
 				}
 				else
 				{
 					chef->SetPos(chef->GetPos() + direction * chef->GetSpeed());
 				}
 
-				if (waiterList[i]->GetState() == CWaiter::E_WAITER_SERVE)
+				if (chef->GetArrived())
 				{
 					chef->SetState(Chef::E_CHEF_WAIT);
-					chef->SetArrived(false);
+					//chef->SetArrived(false);
 				}
 			}
 		}
